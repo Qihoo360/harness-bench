@@ -1,0 +1,9 @@
+{
+  "task_id": "10-office-docs",
+  "title": "Read CSV And PDF Inputs Then Produce JSON And DOCX Outputs",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "timeout_sec": 600,
+  "tags": ["office", "csv", "pdf", "docx"]
+}

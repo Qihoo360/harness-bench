@@ -1,0 +1,28 @@
+{
+  "min_subtasks": 2,
+  "expected_subtask_topics": [
+    "解析SQL结构化数据",
+    "解析Markdown非结构化数据",
+    "交叉比对与冲突报告生成"
+  ],
+  "required_files": [
+    "audit_report.csv",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "sql_extraction": 0.30,
+      "md_extraction": 0.30,
+      "contradiction_accuracy": 0.40
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "report_format_is_valid_csv": true,
+    "no_false_positives_in_report": true
+  }
+}

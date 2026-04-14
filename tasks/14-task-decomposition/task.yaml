@@ -1,0 +1,8 @@
+task_id: "15-task-decomposition"
+title: "自主任务分解与执行"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 2400
+tags: ["planning", "decomposition", "execution-monitoring", "complex"]

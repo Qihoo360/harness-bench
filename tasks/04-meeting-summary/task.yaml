@@ -1,0 +1,9 @@
+{
+  "task_id": "04-meeting-summary",
+  "title": "Summarize A Meeting Transcript Into A Chinese Memo",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "timeout_sec": 600,
+  "tags": ["writing", "summary", "documents"]
+}

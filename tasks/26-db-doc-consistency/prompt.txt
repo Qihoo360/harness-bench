@@ -1,0 +1,19 @@
+# 数据库与系统部署文档一致性审计任务
+
+## 1. 任务背景
+技术团队反馈现有的线上部署文档 `fixtures/docs/deployment_guide.md` 可能已经过时，导致新员工部署时频频报错。系统真实的运行状态记录在昨晚的数据库备份文件 `fixtures/db/backup.sql` 中。
+你需要作为 DevOps Agent，找出文档中与数据库真实配置相矛盾的地方。
+
+## 2. 核心子任务 (Subtasks)
+- 解析真值：读取并解析 `fixtures/db/backup.sql`，提取出 `system_config` 表中所有配置项的真实键值对。你可以直接读取文本，也可以编写脚本将其导入 SQLite 进行查询。
+- 文档比对：阅读 `deployment_guide.md`，提取其中提到的系统参数说明。
+- 矛盾检测：交叉比对两者，找出文档中所有与 SQL 数据库中对应值**不一致**的配置项。
+
+## 3. 产出物定义 (Required Artifacts)
+任务完成后，必须在当前工作目录下产出：
+- `audit_report.csv`: 审计报告。必须包含三列表头：`Config_Key`, `DB_Value`, `Doc_Value`。每一行记录一个不一致的配置项。如果某个配置在文档里提到了但在 DB 里没有，或者在 DB 里有但文档没提，**不要**记录，只记录两者都有但值冲突的项。
+- `progress.md`: 简要记录你是如何提取 SQL 数据和 Markdown 数据的。
+
+## 4. 执行约束 (Constraints)
+- 零幻觉原则：严禁捏造报告内容，`Config_Key` 的名称必须与 SQL 数据库中的字段名完全一致。
+- 精准提取：不要去修改原有的文档或 SQL 文件，你的任务仅是输出对比报告。

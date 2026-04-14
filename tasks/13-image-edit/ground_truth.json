@@ -1,0 +1,17 @@
+{
+  "required_images": ["cat_styled.png", "cat_scene.png"],
+  "min_file_size_bytes": 5000,
+  "description_required": true,
+  "scoring": {
+    "weights": {
+      "files_exist": 0.40,
+      "image_modified": 0.40,
+      "description_quality": 0.20
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  }
+}

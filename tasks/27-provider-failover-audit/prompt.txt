@@ -1,0 +1,39 @@
+任务：OpenClaw 多厂商 API 路由与故障切换审计
+
+你在 `$WORKSPACE/in/` 中收到一组离线材料，用来模拟 OpenClaw 连接 OpenAI、Anthropic、Gemini 三类模型供应商时的真实运行记录。请不要联网；只依据本地文件完成分析。
+
+输入文件：
+- `provider_capabilities.json`：供应商能力与已知限制。
+- `workload_catalog.json`：六类 OpenClaw 工作负载及硬性需求。
+- `gateway_config.json`：当前 OpenClaw 路由配置草案。
+- `traces/*.jsonl`：模拟 usage / cache / tool-call / error 记录。
+- `incident_notes.md`：线上故障和成本异常备注。
+
+请完成以下产物，全部写入 `$WORKSPACE/out/`：
+
+1. `provider_scorecard.json`
+   - 顶层字段必须包含 `workloads`、`provider_health`、`recommended_defaults`。
+   - `workloads` 是对象，每个 workload id 对应：
+     - `primary_provider`：推荐主供应商。
+     - `fallback_provider`：推荐备用供应商。
+     - `reason_codes`：字符串数组，至少 2 个理由。
+     - `risk_notes`：字符串数组，至少 1 个风险。
+   - 必须覆盖 `long_context_research`、`strict_json_tools`、`vision_pdf_triage`、`low_latency_alerts`、`cache_heavy_followups`、`cost_guarded_bulk` 六个 workload。
+
+2. `openclaw_config_patch.json`
+   - 给出可读的 JSON patch 草案，不需要完全符合 RFC 6902，但必须是 JSON 对象。
+   - 必须按嵌套对象路径包含 `agents.defaults.model.primary`、`agents.defaults.model.fallbacks`、`agents.defaults.models`、`diagnostics.cacheTrace.enabled`；不要写成扁平 dotted-key 字符串。
+   - 必须显式开启 cache trace，并为至少两个 provider/model 配置不同的 `cacheRetention` 或等价说明。
+
+3. `failover_playbook.md`
+   - 写出当主供应商出现超时、结构化输出错误、缓存命中下降、视觉任务失败时的处置策略。
+   - 必须包含“不要使用单一跨厂商缓存命中率阈值”的说明。
+   - 必须包含一个表格，列出 workload、primary、fallback、验证信号。
+
+4. `audit_notes.md`
+   - 用简短条目列出你发现的当前配置问题、证据来源文件、推荐修改。
+
+评分重点：
+- 能否区分不同 API 供应商的缓存、工具调用、结构化输出和多模态差异。
+- 能否把离线 traces 与 OpenClaw 配置修改建议关联起来。
+- 能否形成可执行、可审计、可回滚的故障切换策略。

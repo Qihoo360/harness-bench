@@ -1,0 +1,20 @@
+# 生产环境部署故障排查与修复任务
+
+## 1. 任务背景
+生产环境的 CI/CD 流水线在构建阶段崩溃。你需要作为高级运维 Agent，排查位于 `fixtures/logs/build.log` 的构建日志，定位导致崩溃的依赖冲突，并完成本地代码库的修复。
+
+## 2. 核心子任务 (Subtasks)
+- 报错分析：阅读日志，提取发生版本冲突的具体 Python 包名称及版本号。
+- Git 历史溯源：在当前工作目录下执行 Git 指令，查找最近是哪一次 Commit 引入了该错误的依赖版本，提取对应的 Commit Hash。
+- 环境修复与验证：修改代码仓库中的 `requirements.txt` 文件以解决依赖冲突。随后编写一个简易的 `verify_import.py` 脚本，验证修复后的依赖可以被成功加载。
+
+## 3. 产出物定义 (Required Artifacts)
+任务完成后，必须在当前工作目录下产出：
+- `requirements.txt`: 修复后的依赖文件。
+- `verify_import.py`: 用于验证环境依赖加载状态的 Python 测试脚本。
+- `rca_report.md`: 故障根本原因分析报告（Root Cause Analysis），必须包含引发故障的 Commit Hash、报错摘要及你的修复策略。
+- `progress.md`: 记录子任务的执行进度。
+
+## 4. 执行约束 (Constraints)
+- 最小修改原则：只允许修改导致构建失败的冲突依赖项，严禁随意升级、降级或删除其他无关包的版本。
+- 真实性原则：RCA 报告中的 Commit Hash 必须真实存在于当前目录的 `.git` 记录中。

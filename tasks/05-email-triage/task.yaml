@@ -1,0 +1,9 @@
+{
+  "task_id": "05-email-triage",
+  "title": "Triages A Mock Inbox And Drafts Replies",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "timeout_sec": 600,
+  "tags": ["email", "json", "classification"]
+}

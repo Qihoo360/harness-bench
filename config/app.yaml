@@ -1,0 +1,8 @@
+{
+  "data_dir": "data",
+  "tasks_dir": "tasks",
+  "default_timeout_sec": 600,
+  "default_rounds": 1,
+  "results_dir": "data/zeroclaw/results",
+  "work_root": "data/zeroclaw/sandbox"
+}

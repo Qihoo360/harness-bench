@@ -1,0 +1,88 @@
+{
+  "models": {
+    "demo-local": {
+      "adapter": "demo"
+    },
+    "nanoclaw-local": {
+      "adapter": "nanoclaw",
+      "command": "scripts/bench-nanoclaw.sh",
+      "session_prefix": "clawbenchv2-nano",
+      "args": ["agent"],
+      "timeout_sec": 180,
+      "state_dir": "data/nanoclaw-state",
+      "workspace_mount_path": "/workspace"
+    },
+    "nanobot-local": {
+      "adapter": "nanobot",
+      "command": "nanobot",
+      "user_config": "config/nanobot.json",
+      "session_prefix": "clawbenchv2-nanobot",
+      "no_markdown": true,
+      "logs": false,
+      "timeout_sec": 180
+    },
+    "openclaw-local": {
+      "adapter": "openclaw",
+      "command": "openclaw",
+      "user_config": "config/openclaw.json",
+      "session_prefix": "clawbenchv2",
+      "use_gateway": false,
+      "args": ["agent", "--local"]
+    },
+    "openclaw-gateway": {
+      "adapter": "openclaw",
+      "command": "openclaw",
+      "user_config": "~/.openclaw/openclaw.json",
+      "session_prefix": "clawbenchv2",
+      "use_gateway": true,
+      "args": ["agent"]
+    },
+    "moltis-local": {
+      "adapter": "moltis",
+      "command": "moltis",
+      "user_config": "~/.config/moltis/moltis.toml",
+      "session_prefix": "clawbenchv2-moltis",
+      "timeout_sec": 600,
+      "model": "deepseek-v3.2"
+    },
+    "picoclaw-local": {
+      "adapter": "picoclaw",
+      "command": "picoclaw",
+      "user_config": "config/picoclaw.json",
+      "session_prefix": "clawbenchv2-pico",
+      "timeout_sec": 180
+    },
+    "zeroclaw-local": {
+      "adapter": "zeroclaw",
+      "command": "zeroclaw",
+      "user_config": "config/zeroclaw.toml",
+      "session_prefix": "clawbenchv2-zero",
+      "timeout_sec": 180
+    },
+    "tinyclaw-local": {
+      "adapter": "generic_cli",
+      "command": "scripts/bench-tinyclaw.sh",
+      "session_prefix": "clawbenchv2-tiny",
+      "args": ["run", "--prompt-file", "{prompt_file}", "--workspace", "{workspace}", "--session-id", "{session_id}"]
+    },
+    "nullclaw-local": {
+      "adapter": "nullclaw",
+      "command": "nullclaw",
+      "user_config": "config/nullclaw.json",
+      "session_prefix": "clawbenchv2-null",
+      "timeout_sec": 180
+    },
+    "hermes-agent": {
+      "adapter": "hermes_agent",
+      "command": "hermes",
+      "session_prefix": "clawbenchv2-hermes",
+      "args": ["chat"],
+    },
+    "generic-cli": {
+      "adapter": "generic_cli",
+      "command": "my-agent-cli",
+      "session_prefix": "clawbenchv2",
+      "args": ["run", "--workspace", "{workspace}", "--prompt-file", "{prompt_file}"]
+    }
+  }
+}

@@ -1,0 +1,7 @@
+task_id: "20-football-shot-map-analysis"
+title: "足球比赛射门分布图数据统计"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 1800

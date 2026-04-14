@@ -1,0 +1,10 @@
+{
+  "task_id": "07-session-memory",
+  "title": "Keep A Secret Across Two Benchmark Rounds",
+  "prompt_files": ["prompt_round1.txt", "prompt_round2.txt"],
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "hooks_module": "hooks.py",
+  "timeout_sec": 900,
+  "tags": ["memory", "multi-round", "session"]
+}

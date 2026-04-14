@@ -1,0 +1,34 @@
+{
+  "required_workloads": {
+    "long_context_research": {"primary_provider": "anthropic", "fallback_provider": "openai"},
+    "strict_json_tools": {"primary_provider": "openai", "fallback_provider": "gemini"},
+    "vision_pdf_triage": {"primary_provider": "gemini", "fallback_provider": "openai"},
+    "low_latency_alerts": {"primary_provider": "gemini", "fallback_provider": "openai"},
+    "cache_heavy_followups": {"primary_provider": "anthropic", "fallback_provider": "openai"},
+    "cost_guarded_bulk": {"primary_provider": "openai", "fallback_provider": "gemini"}
+  },
+  "required_patch_keys": [
+    "agents.defaults.model.primary",
+    "agents.defaults.model.fallbacks",
+    "agents.defaults.models",
+    "diagnostics.cacheTrace.enabled"
+  ],
+  "required_playbook_phrases": [
+    "不要使用单一跨厂商缓存命中率阈值",
+    "cacheRead",
+    "cacheWrite",
+    "structured",
+    "timeout"
+  ],
+  "min_reason_codes_per_workload": 2,
+  "min_risk_notes_per_workload": 1,
+  "scoring": {
+    "weights": {
+      "scorecard": 0.45,
+      "config_patch": 0.25,
+      "playbook": 0.20,
+      "audit_notes": 0.10
+    },
+    "thresholds": {"excellent": 0.90, "good": 0.75, "pass": 0.60}
+  }
+}

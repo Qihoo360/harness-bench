@@ -1,0 +1,36 @@
+{
+  "required_images": ["31a3b5c84e8e0342f314c8de7afad96e.jpg"],
+  "min_subtasks": 3,
+  "expected_subtask_topics": [
+    "图像文本提取与OCR识别",
+    "实体推断与中文名映射",
+    "专辑发行年份外部检索"
+  ],
+  "required_files": [
+    "result.json",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "vision_recognition": 0.40,
+      "knowledge_retrieval": 0.40,
+      "execution_logic": 0.10,
+      "format_compliance": 0.10
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "singer_field_type": "string",
+    "singer_language": "zh-CN",
+    "year_field_type": "integer",
+    "year_length": 4,
+    "exact_match_target": {
+      "singer": "梁静茹", 
+      "year": 2009
+    }
+  }
+}

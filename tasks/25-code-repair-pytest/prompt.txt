@@ -1,0 +1,19 @@
+# 核心组件 Bug 修复任务
+
+## 1. 任务背景
+广翔前几天提交了一段用于合并环境配置文件的 Python 工具代码（位于 `fixtures/app/config_manager.py`）。但 CI 流水线报错了，显示相关的单元测试未能完全通过。
+你需要作为研发 Agent，通过运行测试用例来定位 Bug，并修复源代码。
+
+## 2. 核心子任务 (Subtasks)
+- 运行测试：调用系统终端执行 `pytest fixtures/app/test_config.py`，阅读并理解终端输出的报错堆栈信息。
+- 定位并修复 Bug：分析 `config_manager.py` 中的代码逻辑缺陷，修改该文件，使其能正确处理嵌套字典的“深度更新（Deep Update）”。
+- 验证修复：再次运行 `pytest`，确保所有测试用例 100% 通过。
+
+## 3. 产出物定义 (Required Artifacts)
+任务完成后，必须产出：
+- 被成功修复的 `fixtures/app/config_manager.py` 文件（直接在原文件上修改保存）。
+- 在当前根目录生成 `progress.md`: 简要记录你排查报错、发现根本原因以及最终修复的逻辑。
+
+## 4. 执行约束 (Constraints)
+- 严禁作弊：绝对不允许修改测试文件 `test_config.py` 中的任何代码或断言。
+- 最小修改：只修复引发 Bug 的逻辑，不要去重写整个文件或引入第三方库（禁止使用 `copy.deepcopy` 等，要求手动实现）。

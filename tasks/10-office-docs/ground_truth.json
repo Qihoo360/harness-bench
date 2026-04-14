@@ -1,0 +1,17 @@
+{
+  "policy_id": "POLICY-2024-Q3",
+  "exclude_status": "return",
+  "totals_by_region": {
+    "North": 1300,
+    "South": 500,
+    "East": 400
+  },
+  "grand_total": 2200,
+  "docx_must_contain": [
+    "POLICY-2024-Q3",
+    "1300",
+    "500",
+    "400",
+    "2200"
+  ]
+}

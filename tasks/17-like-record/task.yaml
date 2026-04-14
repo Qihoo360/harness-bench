@@ -1,0 +1,7 @@
+task_id: "17-like-record"
+title: "社交平台用户行为统计分析"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 1800

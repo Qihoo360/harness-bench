@@ -1,0 +1,10 @@
+{
+  "task_id": "19-incident-runbook-synthesis",
+  "title": "多源生产事故分析与安全 Runbook 合成",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "hooks_module": "hooks.py",
+  "timeout_sec": 1200,
+  "tags": ["incident-response", "runbook", "multi-document", "safety", "evidence-synthesis", "ops"]
+}

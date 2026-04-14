@@ -1,0 +1,21 @@
+# 消费趋势与供应链库存预警任务
+
+## 1. 任务背景
+近期由于一次突发的营销热点，部分商品的消费需求剧增。你需要作为数据分析 Agent，结合前端的消费趋势数据和后端的仓库实际库存，找出面临断货风险的商品并生成预警。
+
+## 2. 核心子任务 (Subtasks)
+- 数据读取：读取当前目录下 `fixtures/data/consumer_trends.csv`（包含日均销量和搜索指数）和 `fixtures/data/warehouse_stock.json`（包含当前实际库存）。
+- 跨表关联与计算：编写脚本，使用商品 ID（Product_ID）将两份数据进行关联。计算每件商品的“可用天数”（计算公式：Current_Stock / Daily_Sales_Velocity）。
+- 异常检测：筛选出同时满足以下两个条件的“高危断货商品”：
+  1. 搜索指数 (Search_Volume) 大于 5000
+  2. 可用天数 (Days_Remaining) 小于 7 天
+
+## 3. 产出物定义 (Required Artifacts)
+任务完成后，必须在当前工作目录下产出：
+- `analysis.py`: 你编写并执行的用于处理数据的 Python 脚本。
+- `alert.txt`: 预警报告。里面仅需包含触发预警的商品 ID 及其计算出的可用天数（保留一位小数），每行一个商品，格式必须严格为 `Product_ID: 可用天数`。
+- `progress.md`: 记录你的数据清洗和分析进度。
+
+## 4. 执行约束 (Constraints)
+- 代码必须具备鲁棒性，能够独立处理 JSON 和 CSV 格式。
+- 严禁编造或猜测结果，`alert.txt` 的内容必须完全由你执行 Python 脚本计算得出。

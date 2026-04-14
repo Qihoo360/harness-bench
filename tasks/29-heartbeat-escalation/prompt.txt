@@ -1,0 +1,37 @@
+任务：Heartbeat 异步邮件监控、去重与升级
+
+请在工作目录 `$WORKSPACE` 中设置一个短时间运行的 heartbeat 邮件监控任务。邮箱目录是 `$WORKSPACE/in/`，每封邮件是一个 JSON 文件，字段包括 `id`、`from`、`subject`、`content`、`priority`、`thread_id`、`received_at`。
+
+评测会在你开始后异步注入新邮件。你需要用 heartbeat 思路持续检查，而不是只扫描一次，也不要使用 cron。
+
+请完成：
+
+1. 创建或更新 `$WORKSPACE/HEARTBEAT.md`
+   - 说明每次 heartbeat 如何扫描 `$WORKSPACE/in/`。
+   - 说明如何识别 `priority = "high"` 的紧急邮件。
+   - 说明如何基于 `thread_id` 或 `id` 去重，避免重复通知。
+   - 说明升级规则：同一 `thread_id` 在短时间内出现 2 封 high 邮件，应升级为 `[升级]`。
+   - 说明轮询间隔，必须包含 sleep/等待策略，避免忙等。
+
+2. 持续运行至少 35 秒，观察异步注入的邮件。
+
+3. 写入 `$WORKSPACE/out/notifications.txt`
+   - 对每封新的 high 邮件追加一行：
+     `[紧急] 来自 {from} 的邮件：{subject}，请及时处理。`
+   - 如果同一 thread 在观察窗口内第二次 high，应追加一行：
+     `[升级] 线程 {thread_id} 已出现多封紧急邮件，请通知值班负责人。`
+   - 不要为 normal / low 邮件写通知。
+   - 不要对同一邮件重复通知。
+
+4. 写入 `$WORKSPACE/out/heartbeat_state.json`
+   - 必须包含 `seen_ids`、`thread_counts`、`last_scan_at`、`poll_interval_seconds`。
+
+5. 写入 `$WORKSPACE/out/escalation_summary.md`
+   - 简要说明发现了哪些紧急邮件、哪些被去重、为什么触发升级。
+
+评分重点：
+- 是否真的通过 heartbeat/持续检查处理异步邮件。
+- 是否正确过滤 normal/low 邮件。
+- 是否按 id/thread 去重。
+- 是否能识别同一 thread 的第二封 high 并升级。
+- 是否避免忙等和不受控写入。

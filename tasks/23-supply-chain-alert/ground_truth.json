@@ -1,0 +1,29 @@
+{
+  "min_subtasks": 3,
+  "expected_subtask_topics": [
+    "多格式数据读取",
+    "跨表关联计算",
+    "条件过滤与预警生成"
+  ],
+  "required_files": [
+    "analysis.py",
+    "alert.txt",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "data_join_accuracy": 0.30,
+      "logic_calculation": 0.40,
+      "output_formatting": 0.30
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "valid_python_script": true,
+    "correct_alert_targets": true
+  }
+}

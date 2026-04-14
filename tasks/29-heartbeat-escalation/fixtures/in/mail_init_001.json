@@ -1,0 +1,9 @@
+{
+  "id": "m_init_001",
+  "from": "alice@example.com",
+  "subject": "午餐安排",
+  "content": "今天中午是否一起吃饭？",
+  "priority": "normal",
+  "thread_id": "lunch-1",
+  "received_at": "2026-04-07T14:19:30+08:00"
+}

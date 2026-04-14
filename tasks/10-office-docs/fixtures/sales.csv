@@ -1,0 +1,7 @@
+region,category,amount,status
+North,Electronics,1000,ok
+North,Electronics,250,return
+North,Office,300,ok
+South,Electronics,500,ok
+South,Office,200,return
+East,Electronics,400,ok

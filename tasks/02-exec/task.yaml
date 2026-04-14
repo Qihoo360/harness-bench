@@ -1,0 +1,9 @@
+{
+  "task_id": "02-exec",
+  "title": "Run Real Shell Commands In The Workspace",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "timeout_sec": 600,
+  "tags": ["exec", "shell", "workspace"]
+}

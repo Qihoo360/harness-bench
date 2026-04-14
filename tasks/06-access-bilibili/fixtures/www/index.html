@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MockBili — 访问哔哩演示号</title>
+  <style>
+    :root {
+      --bili-pink: #fb7299;
+      --bili-pink-dark: #e46788;
+      --bg: #f4f4f4;
+      --card: #fff;
+      --text: #18191c;
+      --sub: #9499a0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .top-bar {
+      height: 64px;
+      background: var(--card);
+      border-bottom: 1px solid #e3e5e7;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+    }
+    .logo {
+      font-weight: 800;
+      color: var(--bili-pink);
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+    .logo-sub {
+      font-size: 11px;
+      color: var(--sub);
+      font-weight: 400;
+    }
+    .banner {
+      background: linear-gradient(135deg, #fff0f5 0%, #ffe8f0 50%, #fff 100%);
+      padding: 32px 24px 24px;
+      border-bottom: 1px solid #eee;
+    }
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--bili-pink), #ff9ec5);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 28px;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-right: 20px;
+    }
+    .user-meta { display: inline-block; vertical-align: middle; }
+    .user-name {
+      font-size: 26px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .user-desc {
+      margin: 0;
+      color: var(--sub);
+      font-size: 14px;
+    }
+    .tab-row {
+      padding: 0 24px;
+      background: var(--card);
+      border-bottom: 2px solid var(--bili-pink);
+    }
+    .tab {
+      display: inline-block;
+      padding: 14px 4px;
+      margin-right: 28px;
+      font-weight: 600;
+      color: var(--bili-pink);
+      border-bottom: 3px solid var(--bili-pink);
+      margin-bottom: -2px;
+    }
+    main { padding: 20px 24px 48px; max-width: 900px; }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    .video-list { list-style: none; padding: 0; margin: 0; }
+    .video-card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      border: 1px solid #e3e5e7;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .video-card .title {
+      font-size: 15px;
+      line-height: 1.5;
+      font-weight: 500;
+      flex: 1;
+    }
+    .video-card .stats {
+      flex-shrink: 0;
+      text-align: right;
+      font-size: 13px;
+      color: var(--sub);
+    }
+    .video-card .play {
+      color: var(--bili-pink);
+      font-weight: 600;
+    }
+    .mock-footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--sub);
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div>
+      <span class="logo">MockBili</span>
+      <span class="logo-sub"> 访问 bilibili 练习布局 · 非 bilibili.com</span>
+    </div>
+  </header>
+
+  <section class="banner">
+    <div class="avatar">访</div>
+    <div class="user-meta">
+      <h1 class="user-name">访问哔哩演示号</h1>
+      <p class="user-desc">虚构 UP · 本地 benchmark · 训练「访问 bilibili 式」页面结构</p>
+    </div>
+  </section>
+
+  <nav class="tab-row">
+    <span class="tab">投稿 3</span>
+  </nav>
+
+  <main>
+    <div class="section-title">投稿列表（已按播放量从高到低排列）</div>
+    <ul class="video-list">
+      <li class="video-card" data-play-count="1880000">
+        <span class="title">【练习】访问 bilibili 导航条与分区入口导览</span>
+        <div class="stats">
+          <div class="play">▶ 188.0万</div>
+          <div>播放</div>
+        </div>
+      </li>
+      <li class="video-card" data-play-count="640000">
+        <span class="title">Mock 分区：离线 HTML 中的动态列表渲染</span>
+        <div class="stats">
+          <div class="play">▶ 64.0万</div>
+          <div>播放</div>
+        </div>
+      </li>
+      <li class="video-card" data-play-count="95000">
+        <span class="title">小贴士：如何把本地端口当成「空间首页」</span>
+        <div class="stats">
+          <div class="play">▶ 9.5万</div>
+          <div>播放</div>
+        </div>
+      </li>
+    </ul>
+  </main>
+
+  <footer class="mock-footer">
+    BENCHMARK_PAGE_MOCK_BILI — 静态 fixture，请勿当作真实站点数据
+  </footer>
+</body>
+</html>

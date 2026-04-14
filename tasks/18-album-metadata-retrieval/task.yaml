@@ -1,0 +1,7 @@
+task_id: "18-album-metadata-retrieval"
+title: "专辑封面元数据提取与知识检索"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 1800

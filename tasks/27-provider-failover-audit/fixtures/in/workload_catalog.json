@@ -1,0 +1,34 @@
+{
+  "workloads": [
+    {
+      "id": "long_context_research",
+      "description": "持续 45 分钟研究同一代码库和 9 份规格文档，要求跨轮引用一致。",
+      "hard_requirements": ["long_context", "multi_step_tool_use", "stable_followups"]
+    },
+    {
+      "id": "strict_json_tools",
+      "description": "调用 12 个工具并输出严格 JSON schema，不允许额外字段或 enum 漂移。",
+      "hard_requirements": ["strict_structured_output", "tool_argument_accuracy"]
+    },
+    {
+      "id": "vision_pdf_triage",
+      "description": "读取发票扫描图和 PDF，提取金额、收款方和异常签名。",
+      "hard_requirements": ["vision", "pdf", "fast_triage"]
+    },
+    {
+      "id": "low_latency_alerts",
+      "description": "heartbeat 触发后 20 秒内分类报警并写通知。",
+      "hard_requirements": ["low_latency", "short_context", "high_availability"]
+    },
+    {
+      "id": "cache_heavy_followups",
+      "description": "同一个会话中反复追问大型工具目录和长系统提示下的后续任务。",
+      "hard_requirements": ["prompt_cache", "cache_diagnostics", "history_reuse"]
+    },
+    {
+      "id": "cost_guarded_bulk",
+      "description": "批量处理 800 封低优先级邮件，要求成本可控且 JSON 输出稳定。",
+      "hard_requirements": ["cost_control", "batch_processing", "structured_output"]
+    }
+  ]
+}

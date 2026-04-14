@@ -1,0 +1,6 @@
+{
+  "pr_branch": "feature/pr-add-doc",
+  "approve_marker_in_contributing": "BENCH_PR_OK",
+  "review_relative_path": "out/review.txt",
+  "approve_line_must_start_with": "APPROVE"
+}

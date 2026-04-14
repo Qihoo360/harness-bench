@@ -1,0 +1,6 @@
+请访问本地页面 `http://127.0.0.1:$HTTP_PORT/`，读取页面中与本次 benchmark 直接相关的可见文字，并把摘录写入 `$WORKSPACE/out/page_extract.txt`。
+
+要求：
+- 至少写入一行
+- 摘录中必须包含页面上的关键标记文字
+

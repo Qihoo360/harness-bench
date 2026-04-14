@@ -1,0 +1,37 @@
+{
+  "min_subtasks": 3,
+  "expected_subtask_topics": [
+    "报错信息提取与依赖冲突分析",
+    "Git日志交叉比对",
+    "依赖文件最小化修改",
+    "验证脚本沙箱测试"
+  ],
+  "required_files": [
+    "requirements.txt",
+    "verify_import.py",
+    "rca_report.md",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "error_analysis_accuracy": 0.30,
+      "git_tracing": 0.20,
+      "minimal_env_fix": 0.30,
+      "report_quality": 0.20
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "no_unrelated_package_changes": true,
+    "valid_python_syntax_in_verify": true,
+    "commit_hash_exists_in_repo": true,
+    "expected_urllib3_version": "1.26.16",
+    "conflicting_package": "botocore",
+    "conflict_snippet": "botocore 1.29.76 depends on urllib3<1.27 and >=1.25.4",
+    "expected_commit_hash": "a1b2c3d"
+  }
+}

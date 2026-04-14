@@ -1,0 +1,37 @@
+
+{
+  "required_images": ["6e801ddaf13a183e7a83be0d90d3ac54.jpg"],
+  "min_subtasks": 3,
+  "expected_subtask_topics": [
+    "图例语义识别与分类",
+    "不同类型射门计数",
+    "射门数据汇总统计"
+  ],
+  "required_files": [
+    "result.json",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "vision_counting": 0.50,
+      "domain_reasoning": 0.30,
+      "format_compliance": 0.20
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "total_shots_type": "integer",
+    "shots_on_target_type": "integer",
+    "goals_type": "integer",
+    "logic_check": "total_shots >= shots_on_target >= goals",
+    "exact_match_target": {
+      "total_shots": 19,
+      "shots_on_target": 6,
+      "goals": 3
+    }
+  }
+}

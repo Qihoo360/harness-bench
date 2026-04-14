@@ -1,0 +1,10 @@
+{
+  "task_id": "20-heartbeat-escalation",
+  "title": "Heartbeat 异步邮件监控、去重与升级",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "hooks_module": "hooks.py",
+  "timeout_sec": 180,
+  "tags": ["heartbeat", "long-running", "autonomous", "email", "dedupe", "escalation"]
+}

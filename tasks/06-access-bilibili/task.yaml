@@ -1,0 +1,10 @@
+{
+  "task_id": "06-access-bilibili",
+  "title": "Access A Local Bilibili-Style Mock Page",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "hooks_module": "hooks.py",
+  "timeout_sec": 900,
+  "tags": ["browser", "local-http", "web-extraction"]
+}

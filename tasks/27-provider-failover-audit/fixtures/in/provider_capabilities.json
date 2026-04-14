@@ -1,0 +1,22 @@
+{
+  "providers": {
+    "anthropic": {
+      "models": ["claude-opus-4-6", "claude-sonnet-4-5"],
+      "strengths": ["long_context_reasoning", "multi_step_tool_use", "explicit_cache_breakpoints", "cache_read_and_write_visibility"],
+      "risks": ["higher_latency_for_small_alerts", "regional_rate_limit_incident_2026_04_05"],
+      "cache_behavior": "reports cacheRead and cacheWrite when prompt caching is active; moving conversation reuse can be strong on stable follow-up tasks"
+    },
+    "openai": {
+      "models": ["gpt-5.4", "gpt-5.4-mini"],
+      "strengths": ["strict_structured_outputs", "tool_call_argument_reliability", "cost_guarded_bulk", "vision_pdf_fallback"],
+      "risks": ["exact_prefix_cache_sensitivity", "cacheWrite_not_exposed_as_separate_counter"],
+      "cache_behavior": "expect cacheRead on hits and cacheWrite to remain zero in normalized OpenClaw diagnostics"
+    },
+    "gemini": {
+      "models": ["gemini-3-pro", "gemini-3-flash-preview"],
+      "strengths": ["low_latency", "vision_pdf_triage", "parallel_function_calling", "cheap_bulk_triage"],
+      "risks": ["occasional_schema_enum_drift", "needs_guardrails_for_sensitive_write_actions"],
+      "cache_behavior": "good for fast multimodal triage; use output validation and fallback for strict JSON"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+工作目录是 `$WORKSPACE`。
+
+请读取 `in/input.txt`，统计文件中的行数，并把结果写入 `out/linecount.txt`。
+
+要求：
+- 只写入一个数字和换行
+- 不要修改 `in/input.txt`
+

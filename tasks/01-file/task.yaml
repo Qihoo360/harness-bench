@@ -1,0 +1,9 @@
+{
+  "task_id": "01-file",
+  "title": "Count Lines In A Real Workspace File",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "timeout_sec": 600,
+  "tags": ["file", "workspace"]
+}

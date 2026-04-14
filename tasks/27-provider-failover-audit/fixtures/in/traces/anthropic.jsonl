@@ -1,0 +1,4 @@
+{"provider":"anthropic","workload":"long_context_research","model":"claude-opus-4-6","latency_ms":11200,"status":"ok","schema_valid":true,"tool_calls":18,"tool_arg_errors":1,"cacheRead":22800,"cacheWrite":6400,"totalTokens":88400}
+{"provider":"anthropic","workload":"cache_heavy_followups","model":"claude-sonnet-4-5","latency_ms":7900,"status":"ok","schema_valid":true,"tool_calls":5,"tool_arg_errors":0,"cacheRead":31400,"cacheWrite":7200,"totalTokens":51100}
+{"provider":"anthropic","workload":"low_latency_alerts","model":"claude-sonnet-4-5","latency_ms":25300,"status":"timeout_retry","schema_valid":true,"tool_calls":2,"tool_arg_errors":0,"cacheRead":1200,"cacheWrite":900,"totalTokens":5100}
+{"provider":"anthropic","workload":"strict_json_tools","model":"claude-sonnet-4-5","latency_ms":5700,"status":"ok","schema_valid":true,"tool_calls":12,"tool_arg_errors":1,"cacheRead":8600,"cacheWrite":2100,"totalTokens":18800}

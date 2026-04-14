@@ -1,0 +1,15 @@
+{
+  "edges": [
+    {"from": "checkout-web", "to": "cart-api", "type": "sync-http"},
+    {"from": "checkout-web", "to": "payment-api", "type": "sync-http"},
+    {"from": "payment-api", "to": "cart-api", "type": "reservation-token-read"},
+    {"from": "cart-api", "to": "inventory-api", "type": "reserveStock"},
+    {"from": "inventory-api", "to": "inventory-db", "type": "sql"},
+    {"from": "inventory-api", "to": "feature-flag-service", "type": "policy-read"}
+  ],
+  "notes": [
+    "payment-api latency is often a secondary symptom when cart reservation tokens are delayed",
+    "inventory-db replica lag under 30s is not considered a rollback trigger for checkout incidents",
+    "reserveStock failures can cascade to cart-api and checkout-web within two minutes"
+  ]
+}

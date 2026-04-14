@@ -1,0 +1,44 @@
+{
+  "required_images": ["2fd7122402d3e96dd07de1d66f76d083.png", "8b1f4d82c3835337e7414ff77144ac5a.png"],
+  "reference_results": {
+    "original_records": 100,
+    "duplicate_records": 35,
+    "effective_records": 65,
+    "top_author": "110292",
+    "top_author_likes": 15,
+    "top_notes": ["338102", "882711"],
+    "dominant_category": "职场",
+    "peak_periods": ["08:00-10:00", "19:00-22:00"]
+  },
+  "min_subtasks": 3,
+  "expected_subtask_topics": [
+    "OCR数据提取",
+    "数据清洗与全局去重",
+    "流量特征工程",
+    "推流策略推导"
+  ],
+  "required_files": [
+    "cleaned_data.csv",
+    "analysis_report.md",
+    "strategy_recommendation.txt",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "decomposition": 0.25,
+      "execution": 0.40,
+      "report_quality": 0.25,
+      "progress_tracking": 0.10
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "composite_key_dedup": true,
+    "cross_image_processing": true,
+    "time_series_analysis": true
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "min_subtasks": 3,
+  "expected_subtask_topics": [
+    "市场调研",
+    "活动策划",
+    "宣传文案",
+    "预算",
+    "时间线"
+  ],
+  "required_files": [
+    "subtasks/",
+    "progress.md",
+    "final_report.md"
+  ],
+  "scoring": {
+    "weights": {
+      "decomposition": 0.25,
+      "execution": 0.40,
+      "report_quality": 0.25,
+      "progress_tracking": 0.10
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  }
+}

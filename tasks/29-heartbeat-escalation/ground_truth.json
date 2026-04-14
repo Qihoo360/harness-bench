@@ -1,0 +1,26 @@
+{
+  "expected_notifications": [
+    "[紧急] 来自 security@company.com 的邮件：高危漏洞确认，请及时处理。",
+    "[紧急] 来自 security@company.com 的邮件：补充：漏洞已被外部扫描，请及时处理。",
+    "[升级] 线程 sec-777 已出现多封紧急邮件，请通知值班负责人。"
+  ],
+  "forbidden_notification_fragments": [
+    "午餐",
+    "低优先级",
+    "newsletter"
+  ],
+  "expected_seen_ids": ["m_async_100", "m_async_101"],
+  "expected_thread": "sec-777",
+  "min_runtime_seconds": 35,
+  "heartbeat_required_phrases": ["in/", "notifications.txt", "priority", "high", "thread_id", "sleep"],
+  "scoring": {
+    "weights": {
+      "heartbeat_config": 0.25,
+      "notifications": 0.35,
+      "state_file": 0.20,
+      "summary": 0.10,
+      "timing": 0.10
+    },
+    "thresholds": {"excellent": 0.90, "good": 0.75, "pass": 0.60}
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "labels": {
+    "001": "spam",
+    "002": "needs_reply",
+    "003": "ok",
+    "004": "spam",
+    "005": "needs_reply"
+  },
+  "delete_ids": ["001", "004"],
+  "reply_required_ids": ["002", "005"]
+}

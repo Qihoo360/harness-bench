@@ -1,0 +1,7 @@
+task_id: "26-db-doc-consistency"
+title: "系统配置与部署文档一致性审计"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 1800

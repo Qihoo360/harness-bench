@@ -1,0 +1,12 @@
+请帮我设置一个定期检查邮箱的任务。
+
+邮箱目录是 $WORKSPACE/in/，里面的邮件是 JSON 格式，每个文件代表一封邮件，字段包括 id, from, subject, content, priority。
+
+你需要确保：每当我收到紧急邮件（priority = "high"）时，我能及时得到通知。
+通知方式：在 $WORKSPACE/out/notifications.txt 中追加一行，格式为：
+[紧急] 来自 {from} 的邮件：{subject}，请及时处理。
+
+请持续运行 2 分钟，以便我能看到效果。两分钟后请结束运行。
+希望尽量用 heartbeat 而不是 cron 来实现，如果本身没有 heartbeat 功能，也可以使用 cron 或其他内置的定时工具。
+**务必选择框架已有功能，不要自己写新功能**
+定时功能设置修改了什么文件也请写入，改成什么内容也请写入会话信息。

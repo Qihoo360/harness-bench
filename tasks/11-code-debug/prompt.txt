@@ -1,0 +1,24 @@
+任务：渐进式代码修复 - 第 $CURRENT_LAYER 轮
+
+你在 $WORKSPACE/in/ 目录下收到 buggy_code.py。
+产生的所有文件都写入 $WORKSPACE/out/ 目录。
+
+当前状态：
+- 当前层：$CURRENT_LAYER / $TOTAL_LAYERS
+- 已修复层：$FIXED_LAYERS（逗号分隔）
+- 本轮目标：修复当前可见的错误
+
+步骤：
+1. 读取 buggy_code.py，分析错误
+2. 修复错误（最小改动）
+3. 运行验证：python $WORKSPACE/in/buggy_code.py
+4. 报告结果："第X层修复完成" 或 "修复失败"
+
+要求：
+- 添加注释 # FIX: 说明
+- 不要提前修复未暴露的bug
+- 保留原有功能
+
+如果全部5层修复完成，创建完整的：
+- $WORKSPACE/out/buggy_code_fixed.py
+- $WORKSPACE/out/fix_log.md

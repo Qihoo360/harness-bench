@@ -1,0 +1,8 @@
+task_id: "16-heartbeat-test"
+title: "定期邮箱检查"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 1200
+tags: ["long-running", "autonomous", "heartbeat"]

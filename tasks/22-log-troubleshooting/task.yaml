@@ -1,0 +1,7 @@
+task_id: "22-log-troubleshooting"
+title: "生产环境长日志排查与依赖修复"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 7200

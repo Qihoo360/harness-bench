@@ -1,0 +1,7 @@
+task_id: "21-US-bank-failures-history"
+title: "美国历史银行倒闭潮图表分析与背景检索"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 1800

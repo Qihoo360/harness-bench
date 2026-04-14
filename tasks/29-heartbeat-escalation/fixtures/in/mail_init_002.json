@@ -1,0 +1,9 @@
+{
+  "id": "m_init_002",
+  "from": "security@company.com",
+  "subject": "例行安全预警（无需通知）",
+  "content": "初始扫描发现一个待确认信号，尚未达到紧急等级，请等待后续确认邮件。",
+  "priority": "normal",
+  "thread_id": "sec-precheck",
+  "received_at": "2026-04-07T14:19:40+08:00"
+}

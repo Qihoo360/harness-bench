@@ -1,0 +1,7 @@
+task_id: "23-supply-chain-alert"
+title: "跨表数据关联与库存预警分析"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 3600

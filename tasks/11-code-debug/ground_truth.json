@@ -1,0 +1,73 @@
+{
+  "total_layers": 5,
+  "max_rounds": 10,
+  "bug_layers": [
+    {
+      "layer": 1,
+      "bug_type": "syntax_error",
+      "description": "函数定义缺少右括号",
+      "exposed_error": "SyntaxError: expected ':' or ')'",
+      "fix_pattern": "添加缺失的右括号",
+      "code": "def calculate(x, y):\n    if x > 0\n        return x + y\n    return y\n\nresult = calculate(1, 2)",
+      "expected_code": "def calculate(x, y):\n    if x > 0:\n        return x + y\n    return y\n\nresult = calculate(1, 2)",
+      "validation": "syntax"
+    },
+    {
+      "layer": 2,
+      "bug_type": "import_error",
+      "description": "模块名拼写错误",
+      "exposed_error": "ModuleNotFoundError: No module named 'jsonn'",
+      "fix_pattern": "jsonn -> json",
+      "code": "import jsonn\nimport os\n\ndata = jsonn.loads('{\"key\": \"value\"}')\nprint(data)",
+      "expected_code": "import json\nimport os\n\ndata = json.loads('{\"key\": \"value\"}')\nprint(data)",
+      "validation": "import"
+    },
+    {
+      "layer": 3,
+      "bug_type": "type_error",
+      "description": "字符串与数字直接拼接",
+      "exposed_error": "TypeError: can only concatenate str (not 'int') to str",
+      "fix_pattern": "str()转换或格式化",
+      "code": "def report(score):\n    return 'Final score: ' + score\n\nprint(report(95))",
+      "expected_code": "def report(score):\n    return 'Final score: ' + str(score)\n\nprint(report(95))",
+      "validation": "runtime"
+    },
+    {
+      "layer": 4,
+      "bug_type": "logic_error",
+      "description": "边界条件判断错误",
+      "exposed_error": "AssertionError: 边界值100应通过",
+      "fix_pattern": "< 改为 <=",
+      "code": "def is_valid_score(score):\n    return score >= 0 and score < 100\n\nassert is_valid_score(100), '满分应通过'",
+      "expected_code": "def is_valid_score(score):\n    return score >= 0 and score <= 100\n\nassert is_valid_score(100), '满分应通过'",
+      "validation": "assertion"
+    },
+    {
+      "layer": 5,
+      "bug_type": "performance_error",
+      "description": "低效嵌套循环导致超时",
+      "exposed_error": "执行时间过长或大数据集失败",
+      "fix_pattern": "优化算法，减少嵌套",
+      "code": "def find_duplicates(data):\n    result = []\n    for i in range(len(data)):\n        for j in range(len(data)):\n            if i != j and data[i] == data[j]:\n                result.append(data[i])\n    return result\n\n# 测试大数据\ndata = list(range(1000)) + [500]\nprint(len(find_duplicates(data)))",
+      "expected_code": "def find_duplicates(data):\n    seen = set()\n    duplicates = set()\n    for item in data:\n        if item in seen:\n            duplicates.add(item)\n        seen.add(item)\n    return list(duplicates)\n\n# 测试大数据\ndata = list(range(1000)) + [500]\nprint(len(find_duplicates(data)))",
+      "validation": "performance"
+    }
+  ],
+  "scoring": {
+    "weights": {
+      "layers_fixed": 0.60,
+      "rounds_efficiency": 0.25,
+      "fix_quality": 0.15
+    },
+    "efficiency": {
+      "optimal_rounds": 5,
+      "max_acceptable_rounds": 10,
+      "penalty_per_extra_round": 0.05
+    },
+    "quality_checks": {
+      "has_fix_comments": true,
+      "minimal_changes": true,
+      "preserves_functionality": true
+    }
+  }
+}

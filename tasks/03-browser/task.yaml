@@ -1,0 +1,10 @@
+{
+  "task_id": "03-browser",
+  "title": "Read A Local Page And Save An Extract",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "hooks_module": "hooks.py",
+  "timeout_sec": 600,
+  "tags": ["browser", "local-http"]
+}

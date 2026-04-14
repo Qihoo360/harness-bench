@@ -1,0 +1,34 @@
+{
+  "emails": [
+    {
+      "id": "001",
+      "from": "prize-team@totally-legit-offers.xyz",
+      "subject": "Congratulations!!! You WON $1,000,000",
+      "body": "Click here NOW to claim your prize. URGENT: send your bank password to verify identity. Act within 1 hour!!!"
+    },
+    {
+      "id": "002",
+      "from": "zhangsan@company.example",
+      "subject": "项目讨论时间",
+      "body": "你好，请问你今天有空吗？想约你讨论一下季度项目进度。"
+    },
+    {
+      "id": "003",
+      "from": "noreply@shop.example",
+      "subject": "订单 #88291 已发货",
+      "body": "您的订单已交给快递公司，预计两日内送达。本邮件由系统自动发送，请勿直接回复。"
+    },
+    {
+      "id": "004",
+      "from": "security-alert@pay-verify-notice.net",
+      "subject": "【紧急】您的账户存在异常登录",
+      "body": "我们检测到异常活动。请立即点击以下链接验证身份并重新绑定银行卡，否则账户将在 24 小时内冻结。请勿告知他人。"
+    },
+    {
+      "id": "005",
+      "from": "lisi@company.example",
+      "subject": "会议纪要",
+      "body": "你好，能把上周五周会的那份会议纪要发我一份吗？我这边写周报要用，谢谢。"
+    }
+  ]
+}

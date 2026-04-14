@@ -1,0 +1,14 @@
+{
+  "scoring": {
+    "weights": {
+      "heartbeat_configured": 0.3,
+      "notification_generated": 0.5,
+      "timing": 0.2
+    },
+    "thresholds": {
+      "excellent": 0.9,
+      "good": 0.7,
+      "pass": 0.5
+    }
+  }
+}

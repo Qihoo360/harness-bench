@@ -1,0 +1,10 @@
+{
+  "task_id": "18-provider-failover-audit",
+  "title": "OpenClaw 多厂商 API 路由与故障切换审计",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "hooks_module": "hooks.py",
+  "timeout_sec": 1200,
+  "tags": ["openclaw", "provider-routing", "tool-use", "cache", "structured-output", "api-evaluation"]
+}

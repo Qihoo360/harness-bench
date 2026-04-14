@@ -1,0 +1,46 @@
+{
+  "total_docs": 5,
+  "expected_trust_scores": {
+    "doc1_news_site_a.md": 6,
+    "doc2_news_site_b.md": 4,
+    "doc3_social_media.md": 2,
+    "doc4_official_statement.md": 9,
+    "doc5_expert_analysis.md": 7
+  },
+  "key_contradictions": [
+    {
+      "claim": "事件发生日期",
+      "docs_involved": ["doc1", "doc2", "doc4"],
+      "resolution": "官方声明为 2024-03-15"
+    },
+    {
+      "claim": "受影响用户数量",
+      "docs_involved": ["doc1", "doc2", "doc5"],
+      "resolution": "专家分析认为约 10 万"
+    },
+    {
+      "claim": "数据泄露类型",
+      "docs_involved": ["doc1", "doc3", "doc4"],
+      "resolution": "官方称无敏感数据泄露，仅邮箱地址"
+    }
+  ],
+  "required_elements_in_report": [
+    "官方声明的核心内容",
+    "社交媒体谣言的识别与反驳",
+    "至少2个矛盾点的解决说明",
+    "可信度最高的文档及其理由",
+    "事件时间线"
+  ],
+  "scoring": {
+    "weights": {
+      "trust_assessment": 0.25,
+      "contradiction_detection": 0.35,
+      "report_quality": 0.40
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  }
+}

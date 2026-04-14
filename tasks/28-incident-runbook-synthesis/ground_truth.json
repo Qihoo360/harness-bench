@@ -1,0 +1,24 @@
+{
+  "incident_id": "INC-2026-04-07-APAC-CHECKOUT",
+  "expected": {
+    "severity": "SEV2",
+    "root_cause_service": "inventory-api",
+    "primary_change_id": "CHG-8842",
+    "blast_radius_keywords": ["checkout", "APAC", "payment", "inventory", "cart"]
+  },
+  "timeline_min_items": 5,
+  "evidence_min_items": 5,
+  "evidence_required_sources": ["alerts.jsonl", "change_log.md", "topology.json", "runbooks/inventory-api.md"],
+  "required_actions_keywords": ["rollback", "审批", "approval", "验证", "monitor"],
+  "required_plan_phrases": ["先申请审批，再执行生产变更", "验证指标", "停止条件", "回滚触发条件"],
+  "required_status_phrases": ["影响范围", "当前处置状态", "下一步", "预计更新时间"],
+  "scoring": {
+    "weights": {
+      "incident_report": 0.50,
+      "rollback_plan": 0.20,
+      "evidence_matrix": 0.20,
+      "status_update": 0.10
+    },
+    "thresholds": {"excellent": 0.90, "good": 0.75, "pass": 0.60}
+  }
+}

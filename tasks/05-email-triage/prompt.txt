@@ -1,0 +1,17 @@
+你在模拟邮箱环境中处理 **`$WORKSPACE/emails.json`** 中的邮件列表。该文件为 JSON 对象，字段 **`emails`** 为数组；数组中每一封邮件为对象，含 `id`、`from`、`subject`、`body`。工作目录：`$WORKSPACE`。
+
+请完成：
+
+1) **阅读** `$WORKSPACE/emails.json` 中的全部邮件，为每一封分类（三选一）：
+   - `spam`：垃圾/诈骗/明显不应理会，应列入删除清单。
+   - `needs_reply`：需要人类式回复的往来（例如同事询问你是否方便）。
+   - `ok`：无需回复（如系统自动通知、仅告知类）。
+
+2) 将分类结果写入 **`$WORKSPACE/out/triage.json`**（JSON 对象，键为邮件 `id` 字符串，值形如）：
+   `{"label":"spam|needs_reply|ok","reason_short":"一句理由"}`
+
+3) 将所有 `spam` 的 id 逐行写入 **`$WORKSPACE/out/delete_ids.txt`**（仅 id，每行一个，不要其它文字）。非 spam 不要写入。
+
+4) 对每一封 `needs_reply` 的邮件，将**回复正文**（纯文本）写入 **`$WORKSPACE/out/replies/<id>.txt`**（例如 `out/replies/002.txt`）。回复应**直接回应对方问题**（例如对方问「今天有空吗」，应明确有空/没空或提出可约时间），不要答非所问。
+
+5) 先 `mkdir -p $WORKSPACE/out $WORKSPACE/out/replies`。

@@ -1,0 +1,4 @@
+{"provider":"openai","workload":"strict_json_tools","model":"gpt-5.4","latency_ms":4200,"status":"ok","schema_valid":true,"tool_calls":12,"tool_arg_errors":0,"cacheRead":4864,"cacheWrite":0,"totalTokens":18320}
+{"provider":"openai","workload":"cache_heavy_followups","model":"gpt-5.4-mini","latency_ms":6100,"status":"ok","schema_valid":true,"tool_calls":4,"tool_arg_errors":0,"cacheRead":4608,"cacheWrite":0,"totalTokens":22100}
+{"provider":"openai","workload":"vision_pdf_triage","model":"gpt-5.4","latency_ms":9800,"status":"ok","schema_valid":true,"tool_calls":3,"tool_arg_errors":0,"cacheRead":3840,"cacheWrite":0,"totalTokens":25120}
+{"provider":"openai","workload":"cost_guarded_bulk","model":"gpt-5.4-mini","latency_ms":7400,"status":"ok","schema_valid":true,"tool_calls":8,"tool_arg_errors":0,"cacheRead":4096,"cacheWrite":0,"totalTokens":54200}

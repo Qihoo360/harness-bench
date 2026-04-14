@@ -1,0 +1,6 @@
+{
+  "summary_path": "out/meeting_summary.txt",
+  "summary_min_chars": 180,
+  "summary_max_chars": 480,
+  "required_phrases": ["Q2", "预算", "里程碑"]
+}

@@ -1,0 +1,10 @@
+{
+  "task_id": "08-image-recognize",
+  "title": "Inspect Two Local Images And Save Short Answers",
+  "prompt_file": "prompt.txt",
+  "fixtures_dir": "fixtures",
+  "oracle_module": "oracle_grade.py",
+  "hooks_module": "hooks.py",
+  "timeout_sec": 600,
+  "tags": ["vision", "multimodal", "images"]
+}

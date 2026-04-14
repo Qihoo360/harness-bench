@@ -1,0 +1,16 @@
+任务主题：**访问 bilibili**（本题为 **本地仿站演练**，不连接公网 bilibili.com）。工作目录：`$WORKSPACE`。
+
+## 说明
+
+评测环境已启动 **本地 HTTP 服务**，页面为 **仿 bilibili 空间布局** 的静态 HTML（虚构 UP：**访问哔哩演示号**），含 **3 条投稿**，列表已按 **播放量从高到低** 排列，用于练习「访问 bilibili 类页面 → 抽取投稿标题」的流程。
+
+## 目标
+
+1. 用 **浏览器** 或 **exec（如 curl）** 打开 **`http://127.0.0.1:$HTTP_PORT/`**（端口见日志 `HTTP_PORT` / `MOCK_PAGE`）。
+2. 按 **播放量从高到低**（与页面从上到下一致）提取 **三条视频标题**，写入 **`$WORKSPACE/out/titles.txt`**：UTF-8，一行一个标题，无多余首尾空白。
+3. 将上述 URL 写入 **`$WORKSPACE/out/source_url.txt`** 单行。
+4. 执行前 **`mkdir -p $WORKSPACE/out`**。
+
+## 校验
+
+页脚含 **`BENCHMARK_PAGE_MOCK_BILI`**，用于确认打开的是本 fixture。

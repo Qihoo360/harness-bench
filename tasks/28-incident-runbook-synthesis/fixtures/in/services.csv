@@ -1,0 +1,8 @@
+service,owner,region_scope,slo,dependencies
+checkout-web,web-checkout-oncall,global,99.5,"cart-api,payment-api"
+cart-api,cart-platform-oncall,global,99.7,"inventory-api,pricing-api"
+payment-api,payments-oncall,global,99.9,"cart-api,fraud-api"
+inventory-api,supply-platform-oncall,APAC,99.6,"inventory-db,feature-flag-service"
+inventory-db,database-oncall,APAC,99.95,""
+feature-flag-service,platform-oncall,global,99.99,""
+customer-support,support-ops,global,99.0,"checkout-web"

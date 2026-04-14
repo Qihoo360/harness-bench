@@ -1,0 +1,13 @@
+task_id: "12-code-debug"
+title: "渐进式代码修复与验证"
+prompt_files:
+  - "prompt.txt"
+  - "prompt.txt"
+  - "prompt.txt"
+  - "prompt.txt"
+  - "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 600
+tags: ["code-debugging", "iterative-repair", "multi-layer", "error-recovery"]

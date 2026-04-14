@@ -1,0 +1,27 @@
+{
+  "min_subtasks": 2,
+  "expected_subtask_topics": [
+    "执行测试获取报错上下文",
+    "递归逻辑实现与修复"
+  ],
+  "required_files": [
+    "fixtures/app/config_manager.py",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "tests_passed": 0.60,
+      "test_file_untouched": 0.30,
+      "report_quality": 0.10
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "test_file_hash_unchanged": true,
+    "pytest_exit_code_zero": true
+  }
+}

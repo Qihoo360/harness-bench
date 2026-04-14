@@ -1,0 +1,7 @@
+task_id: "25-code-repair-pytest"
+title: "深层字典合并Bug修复与单元测试闭环"
+prompt_file: "prompt.txt"
+fixtures_dir: "fixtures"
+oracle_module: "oracle_grade.py"
+hooks_module: "hooks.py"
+timeout_sec: 1200

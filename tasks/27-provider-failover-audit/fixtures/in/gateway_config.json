@@ -1,0 +1,23 @@
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "openai/gpt-5.4-mini",
+        "fallbacks": ["anthropic/claude-sonnet-4-5"]
+      },
+      "models": {
+        "openai/gpt-5.4-mini": {"params": {"cacheRetention": "long"}},
+        "anthropic/claude-sonnet-4-5": {"params": {"cacheRetention": "long"}},
+        "gemini/gemini-3-flash-preview": {"params": {"cacheRetention": "none"}}
+      }
+    }
+  },
+  "diagnostics": {
+    "cacheTrace": {"enabled": false}
+  },
+  "routing_rules": [
+    {"match": "vision_pdf_triage", "provider": "openai"},
+    {"match": "low_latency_alerts", "provider": "anthropic"},
+    {"match": "strict_json_tools", "provider": "gemini"}
+  ]
+}

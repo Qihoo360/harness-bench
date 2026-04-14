@@ -1,0 +1,32 @@
+{
+  "required_images": ["image.jpg"],
+  "min_subtasks": 3,
+  "expected_subtask_topics": [
+    "图表时间轴与峰值定位",
+    "宏观经济历史背景检索",
+    "结构化分析报告生成"
+  ],
+  "required_files": [
+    "result.json",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "vision_chart_reading": 0.40,
+      "historical_retrieval": 0.40,
+      "format_compliance": 0.20
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "expected_crisis_count": 3,
+    "wave_1_must_contain_keywords": ["大萧条", "Great Depression", "1930s", "1940s"],
+    "wave_2_must_contain_keywords": ["储贷危机", "Savings and Loan Crisis", "1980s", "1990s"],
+    "wave_3_must_contain_keywords": ["次贷危机", "Subprime Mortgage Crisis", "2008", "金融危机"],
+    "background_min_length": 50
+  }
+}

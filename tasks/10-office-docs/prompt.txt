@@ -1,0 +1,18 @@
+你在办公目录 **`$WORKSPACE`** 中处理 CSV、PDF 与 Word 模板，产出 **JSON 汇总** 与 **正式 Word 报告**。
+
+**输入文件（已在 workspace 根目录）：**
+
+- **`sales.csv`**：列 `region`, `category`, `amount`, `status`（金额为正整数）。
+- **`policy.pdf`**：汇总规则（须阅读并遵守）。
+- **`template.docx`**：说明与参考用语（可按需参考；最终报告不要求与模板版式一致）。
+
+**须完成：**
+
+1. 阅读 **`policy.pdf`**，按其中 **POLICY-2024-Q3** 规则处理 **`sales.csv`**：对 `status` 为 **`return`** 的行不计入各区域金额合计；对其余行按 **`region`** 汇总 **`amount`**。
+2. 创建目录 **`$WORKSPACE/out`**。
+3. 写入 **`$WORKSPACE/out/summary.json`**（UTF-8 JSON 对象），字段必须包含：
+   - **`policy_id`**：字符串，与 `policy.pdf` 中的政策编号一致。
+   - **`exclude_status`**：被排除行的 `status` 取值（字符串）。
+   - **`totals_by_region`**：对象，键为区域名，值为该区域汇总金额（数字）。
+   - **`grand_total`**：全部区域汇总后的总金额（数字）。
+4. 写入 **`$WORKSPACE/out/report.docx`**：正式备忘录，文中须**引用**政策编号 **POLICY-2024-Q3**，并写出**各区域小计**与**全公司合计**（数字须与 `summary.json` 一致）。

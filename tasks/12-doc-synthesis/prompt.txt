@@ -1,0 +1,44 @@
+任务：多文档综合与矛盾检测
+
+你在 $WORKSPACE/in/ 目录下收到 5 份关于同一事件的文档：
+- doc1_news_site_a.md  （新闻网站A的报道）
+- doc2_news_site_b.md  （新闻网站B的报道）
+- doc3_social_media.md （社交媒体帖子/谣言）
+- doc4_official_statement.md （官方声明）
+- doc5_expert_analysis.md （专家分析）
+
+这些文档存在矛盾、错误或偏见。
+请完成以下步骤，所有输出放入 $WORKSPACE/out/：
+
+1. 逐文档可信度评估（trustworthiness.json）
+   为每份文档打分 0-10，说明依据（如：来源权威性、一致性、证据链）。
+   格式：
+   {
+     "doc1_news_site_a.md": {"score": 6, "reason": "有具体数据但偏向 sensational"},
+     "doc2_news_site_b.md": {"score": 4, "reason": "明显反驳，但缺乏证据"},
+     ...
+   }
+
+2. 矛盾点检测（contradictions.json）
+   列出所有关键矛盾点（至少3个），注明涉及哪些文档及具体引用。
+   格式：
+   {
+     "contradictions": [
+       {
+         "claim": "事件发生时间",
+         "documents": ["doc1", "doc2", "doc4"],
+         "quotes": ["1月15日", "1月16日", "1月15日"],
+         "resolution": "官方声明为正确"
+       }
+     ]
+   }
+
+3. 最终真相报告（final_report.md）
+   - 基于交叉验证，给出最可信的事件叙述（800-1500字）
+   - 附上“不确定/争议”部分
+   - 附上每个主张的支撑证据来源（使用 [文档名] 标记）
+
+评分将基于：
+- 可信度评估的合理性
+- 矛盾检测的完整性
+- 最终报告的逻辑一致性与证据支撑

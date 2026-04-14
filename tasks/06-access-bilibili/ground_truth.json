@@ -1,0 +1,11 @@
+{
+  "min_line_count": 3,
+  "min_line_chars": 2,
+  "max_line_chars": 240,
+  "expected_ordered_titles": [
+    "【练习】访问 bilibili 导航条与分区入口导览",
+    "Mock 分区：离线 HTML 中的动态列表渲染",
+    "小贴士：如何把本地端口当成「空间首页」"
+  ],
+  "_comment": "与 fixtures/www/index.html 三行标题一致；改页面时同步更新"
+}

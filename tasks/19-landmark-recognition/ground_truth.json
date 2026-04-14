@@ -1,0 +1,35 @@
+{
+  "required_images": ["image.jpg"],
+  "min_subtasks": 3,
+  "expected_subtask_topics": [
+    "图像特征提取与地标识别",
+    "建筑背景知识检索",
+    "结构化介绍文本生成"
+  ],
+  "required_files": [
+    "result.json",
+    "progress.md"
+  ],
+  "scoring": {
+    "weights": {
+      "vision_recognition": 0.40,
+      "knowledge_retrieval": 0.30,
+      "content_generation": 0.20,
+      "format_compliance": 0.10
+    },
+    "thresholds": {
+      "excellent": 0.90,
+      "good": 0.75,
+      "pass": 0.60
+    }
+  },
+  "validation_constraints": {
+    "building_name_field_type": "string",
+    "building_name_language": "en",
+    "intro_field_type": "string",
+    "intro_min_length": 50,
+    "exact_match_target": {
+      "building_name_en": "Royal Albert Hall"
+    }
+  }
+}

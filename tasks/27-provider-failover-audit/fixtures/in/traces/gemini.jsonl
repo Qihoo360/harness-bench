@@ -1,0 +1,4 @@
+{"provider":"gemini","workload":"vision_pdf_triage","model":"gemini-3-flash-preview","latency_ms":3300,"status":"ok","schema_valid":true,"tool_calls":4,"tool_arg_errors":0,"cacheRead":3900,"cacheWrite":0,"totalTokens":16800}
+{"provider":"gemini","workload":"low_latency_alerts","model":"gemini-3-flash-preview","latency_ms":1800,"status":"ok","schema_valid":true,"tool_calls":2,"tool_arg_errors":0,"cacheRead":0,"cacheWrite":0,"totalTokens":2200}
+{"provider":"gemini","workload":"strict_json_tools","model":"gemini-3-pro","latency_ms":4800,"status":"schema_enum_drift","schema_valid":false,"tool_calls":12,"tool_arg_errors":2,"cacheRead":1400,"cacheWrite":0,"totalTokens":17400}
+{"provider":"gemini","workload":"cost_guarded_bulk","model":"gemini-3-flash-preview","latency_ms":4100,"status":"ok","schema_valid":true,"tool_calls":8,"tool_arg_errors":1,"cacheRead":0,"cacheWrite":0,"totalTokens":48800}

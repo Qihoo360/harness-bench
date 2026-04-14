@@ -1,0 +1,7 @@
+{
+  "id": 1,
+  "from": "alice@example.com",
+  "subject": "团队午餐",
+  "content": "今天中午一起吃饭吗？",
+  "priority": "normal"
+}
