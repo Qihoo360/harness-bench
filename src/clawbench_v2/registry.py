@@ -36,4 +36,7 @@ def build_adapter(adapter_name: str) -> BaseAdapter:
         return HermesAgentAdapter()
     if adapter_name == "generic_cli":
         return GenericCliAdapter()
+    if adapter_name == "ga_agent":
+        from clawbench_v2.adapters.ga_agent import GaAgentAdapter
+        return GaAgentAdapter()
     raise ValueError(f"unknown adapter: {adapter_name}")

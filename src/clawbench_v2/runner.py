@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import tempfile
 import uuid
@@ -34,16 +35,63 @@ def _copy_fixtures(task: TaskSpec, workspace: Path) -> None:
     fixtures = task.task_dir / task.fixtures_dir
     workspace.mkdir(parents=True, exist_ok=True)
     # Keep benchmark workspaces structurally consistent so adapters can rely on
-    # `workspace/in` and `workspace/out` even when a task has no fixtures yet.
+    # `workspace/in`, `workspace/out`, and prompt-referenced fixture paths.
     (workspace / "in").mkdir(parents=True, exist_ok=True)
     (workspace / "out").mkdir(parents=True, exist_ok=True)
     if fixtures.is_dir():
+        fixtures_root = workspace / task.fixtures_dir
+        shutil.copytree(fixtures, fixtures_root, dirs_exist_ok=True)
+        # Preserve the historical flat copy for existing adapters/tasks that
+        # expect fixture contents directly under the workspace root.
         for child in fixtures.iterdir():
             dest = workspace / child.name
+            if dest == fixtures_root:
+                continue
             if child.is_dir():
                 shutil.copytree(child, dest, dirs_exist_ok=True)
             else:
                 shutil.copy2(child, dest)
+
+
+def _mirror_workspace_outputs_to_out(workspace: Path) -> None:
+    out_dir = workspace / "out"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    output_exts = {
+        ".csv", ".json", ".jsonl", ".txt", ".md", ".html", ".xml", ".yaml", ".yml",
+        ".py", ".js", ".ts", ".sql", ".sh", ".ps1", ".png", ".jpg", ".jpeg", ".svg",
+        ".pdf", ".zip", ".tar", ".gz", ".parquet", ".xlsx", ".docx",
+    }
+    ignored_prefixes = (
+        "fixtures/", "fixture/", "in/", "input/", "inputs/", "data/", "datasets/",
+        "images/", "image/", "assets/", "__pycache__/", ".git/", ".pytest_cache/", "out/",
+    )
+    ignored_names = {
+        "prompt.txt",
+        "agent_instructions.txt",
+        "ground_truth.json",
+    }
+
+    for file_path in sorted(workspace.rglob("*")):
+        if not file_path.is_file():
+            continue
+        rel = file_path.relative_to(workspace).as_posix()
+        lowered = rel.lower()
+        if lowered.startswith(ignored_prefixes) or lowered.startswith(".") or Path(rel).name.lower() in ignored_names:
+            continue
+        if file_path.stat().st_size <= 0:
+            continue
+        if file_path.suffix.lower() not in output_exts:
+            continue
+
+        dest = out_dir / rel
+        if dest.exists():
+            if dest.is_dir():
+                continue
+            if dest.stat().st_size > 0:
+                continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(file_path, dest)
 
 
 def _new_session_id(model_cfg: dict[str, Any], task_id: str) -> str:
@@ -317,11 +365,11 @@ def _collect_proxy_usage_summary(log_file: Path, session_id: str) -> dict[str, A
 def run_task(app: AppConfig, task: TaskSpec, model_id: str, model_cfg: dict[str, Any], mode: str, keep_workspace: bool = True) -> TaskRunResult:
     sandbox = Path(tempfile.mkdtemp(prefix=_sandbox_prefix(task.task_id), dir=str(app.work_root)))
     workspace = sandbox / "workspace"
-    _copy_fixtures(task, workspace)
 
     runtime_env: dict[str, str] = {}
     hooks = load_hooks(task)
     runtime_state: dict[str, Any] = {}
+    # If hooks have prepare_runtime, let them set up workspace first (e.g., git clone)
     if hooks and callable(getattr(hooks, "prepare_runtime", None)):
         state = hooks.prepare_runtime({"task": task, "sandbox": sandbox, "workspace": workspace})
         if isinstance(state, dict):
@@ -329,6 +377,9 @@ def run_task(app: AppConfig, task: TaskSpec, model_id: str, model_cfg: dict[str,
             for key, value in state.items():
                 if isinstance(value, str):
                     runtime_env[key] = value
+
+    # Copy fixtures AFTER hooks (hooks like 09-git need to git clone into workspace first)
+    _copy_fixtures(task, workspace)
 
     adapter_name = str(model_cfg.get("adapter") or "demo")
     adapter = build_adapter(adapter_name)
@@ -389,14 +440,88 @@ def run_task(app: AppConfig, task: TaskSpec, model_id: str, model_cfg: dict[str,
     usage_summary = _collect_proxy_usage_summary(proxy_log, session_id)
     if not usage_summary.get("available"):
         usage_summary = _collect_usage_summary(adapter_result, session_id)
+
+    # Fix: copy task's ground_truth.json and fixtures to where oracle expects them.
+    # Oracle uses task_dir = w.parent.parent, so we place them at sandbox.parent level
+    # AND at sandbox level (workspace.parent) to cover both oracle patterns.
+    if task.task_dir is not None:
+        _gt_src = task.task_dir / "ground_truth.json"
+        # Copy ground_truth to both sandbox.parent (ws.parent.parent) and sandbox (ws.parent)
+        for _gt_target in [workspace.resolve().parent.parent, workspace.resolve().parent]:
+            _gt_dst = _gt_target / "ground_truth.json"
+            if _gt_src.exists():
+                shutil.copy2(_gt_src, _gt_dst)
+        # Copy fixtures to both levels (force overwrite to avoid cross-task contamination)
+        _fix_src = task.task_dir / "fixtures"
+        for _fix_target in [workspace.resolve().parent.parent, workspace.resolve().parent]:
+            _fix_dst = _fix_target / "fixtures"
+            if _fix_src.is_dir():
+                if _fix_dst.exists():
+                    shutil.rmtree(_fix_dst)
+                shutil.copytree(_fix_src, _fix_dst)
+        # Also copy fixtures INTO workspace so oracle can run pytest from cwd=workspace
+        _fix_ws_dst = workspace / "fixtures"
+        if _fix_src.is_dir() and not _fix_ws_dst.exists():
+            shutil.copytree(_fix_src, _fix_ws_dst)
+        # If model modified files in workspace/ (without fixtures/ prefix), sync them into workspace/fixtures/
+        if _fix_src.is_dir() and _fix_ws_dst.is_dir():
+            for child in _fix_src.iterdir():
+                ws_child = workspace / child.name
+                fix_child = _fix_ws_dst / child.name
+                if ws_child.is_dir() and fix_child.is_dir():
+                    for f in ws_child.rglob("*"):
+                        if f.is_file():
+                            rel = f.relative_to(ws_child)
+                            dest = fix_child / rel
+                            if dest.exists():
+                                # Check if model modified it (different from original)
+                                orig = child / rel
+                                if orig.exists() and f.read_bytes() != orig.read_bytes():
+                                    dest.parent.mkdir(parents=True, exist_ok=True)
+                                    shutil.copy2(f, dest)
+
+    # Ensure venv/Scripts or venv/bin is in PATH for oracle subprocesses (pytest etc.)
+    import sys as _sys
+    _venv_bin = str(Path(_sys.executable).parent)
+    if _venv_bin not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = _venv_bin + os.pathsep + os.environ.get("PATH", "")
+
+    # Keep root-authored artifacts visible to oracles that read workspace/out.
+    _mirror_workspace_outputs_to_out(workspace)
     oracle_result = run_oracle(task, workspace)
+    # Fix double-weight scoring bug in oracles: recalculate score from checks.
+    # Use detail.score when available (partial credit), else binary pass/fail.
+    _checks = oracle_result.get("checks", [])
+    if _checks and any(isinstance(c.get("weight"), (int, float)) for c in _checks):
+        _total_w = sum(c.get("weight", 0) for c in _checks if isinstance(c.get("weight"), (int, float)))
+        _earned_w = 0.0
+        for _c in _checks:
+            _w = _c.get("weight", 0)
+            if not isinstance(_w, (int, float)):
+                continue
+            _detail = _c.get("detail")
+            if isinstance(_detail, dict) and "score" in _detail:
+                _earned_w += _w * float(_detail["score"])
+            elif isinstance(_detail, dict) and "coverage" in _detail:
+                _earned_w += _w * float(_detail["coverage"])
+            elif isinstance(_detail, dict) and "accuracy" in _detail:
+                _earned_w += _w * float(_detail["accuracy"])
+            elif _c.get("pass"):
+                _earned_w += _w
+        if _total_w > 0:
+            _recalc_score = round(_earned_w / _total_w, 4)
+            oracle_result["_original_score"] = oracle_result.get("score")
+            oracle_result["_original_outcome_score"] = oracle_result.get("outcome_score")
+            oracle_result["score"] = _recalc_score
+            oracle_result["outcome_score"] = _recalc_score
+            oracle_result["score_recalc_method"] = "weighted_detail_scores"
     process_result = (
         run_process_rubric(task.task_dir, task.task_id, adapter_result.metadata or {}, session_id)
         if task.task_dir is not None
         else {"available": False, "skipped": True, "reason": "missing task_dir"}
     )
     combined_result: dict[str, Any] = {"available": False, "combined_score": None}
-    outcome_score = oracle_result.get("outcome_score")
+    outcome_score = oracle_result.get("outcome_score") or oracle_result.get("score")
     process_score = process_result.get("total")
     if isinstance(outcome_score, (int, float)) and isinstance(process_score, (int, float)):
         combined_result = {
@@ -432,15 +557,6 @@ def run_task(app: AppConfig, task: TaskSpec, model_id: str, model_cfg: dict[str,
             "notes": "compute_scoring failed",
         }
 
-    try:
-        scoring = compute_scoring(task, sandbox, oracle_result)
-    except Exception as exc:
-        scoring = {
-            "error": str(exc),
-            "combined_score": None,
-            "notes": "compute_scoring failed",
-        }
-
     result = TaskRunResult(
         task_id=task.task_id,
         model_id=model_id,
@@ -463,6 +579,20 @@ def run_task(app: AppConfig, task: TaskSpec, model_id: str, model_cfg: dict[str,
     result_dir = app.results_dir / model_id
     result_dir.mkdir(parents=True, exist_ok=True)
     out_file = result_dir / f"{task.task_id}.json"
+    # Best-score retention: if existing result has higher score, don't overwrite
+    _new_score = combined_result.get("combined_score") if combined_result.get("available") else None
+    if out_file.exists() and isinstance(_new_score, (int, float)):
+        try:
+            _old_data = json.loads(out_file.read_text(encoding="utf-8"))
+            _old_score = _old_data.get("combined_result", {}).get("combined_score")
+            if isinstance(_old_score, (int, float)) and _old_score > _new_score:
+                # Keep old result (better score)
+                if not keep_workspace:
+                    shutil.rmtree(sandbox, ignore_errors=True)
+                    result.workspace_kept = False
+                return result
+        except Exception:
+            pass
     proxy_dir = sandbox / "usage-proxy"
     trace_for_stdout = extract_proxy_trace(proxy_dir, all_rounds=False)
     adapter_stdout_saved = json.dumps(trace_for_stdout, ensure_ascii=False, indent=2)

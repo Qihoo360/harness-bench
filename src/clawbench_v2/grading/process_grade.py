@@ -159,7 +159,7 @@ def compute_scoring(
     trace = extract_proxy_trace(proxy_dir, all_rounds=False)
     trace_error = trace.get("error")
 
-    outcome_raw = oracle_result.get("outcome_score")
+    outcome_raw = oracle_result.get("outcome_score") or oracle_result.get("score")
     outcome_score: float | None = float(outcome_raw) if isinstance(outcome_raw, (int, float)) else None
 
     base: dict[str, Any] = {

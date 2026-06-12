@@ -9,6 +9,7 @@ from clawbench_v2.adapters.openclaw import OpenClawAdapter
 from clawbench_v2.adapters.picoclaw import PicoClawAdapter
 from clawbench_v2.adapters.zeroclaw import ZeroClawAdapter
 from clawbench_v2.adapters.hermes import HermesAgentAdapter
+from clawbench_v2.adapters.ga_agent import GaAgentAdapter
 
 __all__ = [
     "BaseAdapter",
@@ -22,4 +23,5 @@ __all__ = [
     "ZeroClawAdapter",
     "HermesAgentAdapter",
     "MoltisAdapter",
+    "GaAgentAdapter",
 ]

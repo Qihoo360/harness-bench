@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +56,53 @@ def _load_module(file_path: Path, module_name: str) -> Any | None:
     return module
 
 
+def _rewrite_windows_python3_command(args: Any) -> Any:
+    if sys.platform != "win32" or not isinstance(args, (list, tuple)) or not args:
+        return args
+    executable = args[0]
+    if not isinstance(executable, str):
+        return args
+    if Path(executable).name.lower() not in {"python3", "python3.exe"}:
+        return args
+    rewritten = [sys.executable, *args[1:]]
+    return tuple(rewritten) if isinstance(args, tuple) else rewritten
+
+
+def _patch_windows_python3_subprocess() -> tuple[Any, Any, Any, Any] | None:
+    if sys.platform != "win32":
+        return None
+
+    original_run = subprocess.run
+    original_check_call = subprocess.check_call
+    original_check_output = subprocess.check_output
+    original_popen = subprocess.Popen
+
+    def run(args: Any, *pargs: Any, **kwargs: Any) -> Any:
+        return original_run(_rewrite_windows_python3_command(args), *pargs, **kwargs)
+
+    def check_call(args: Any, *pargs: Any, **kwargs: Any) -> Any:
+        return original_check_call(_rewrite_windows_python3_command(args), *pargs, **kwargs)
+
+    def check_output(args: Any, *pargs: Any, **kwargs: Any) -> Any:
+        return original_check_output(_rewrite_windows_python3_command(args), *pargs, **kwargs)
+
+    class Popen(original_popen):  # type: ignore[misc]
+        def __init__(self, args: Any, *pargs: Any, **kwargs: Any) -> None:
+            super().__init__(_rewrite_windows_python3_command(args), *pargs, **kwargs)
+
+    subprocess.run = run  # type: ignore[assignment]
+    subprocess.check_call = check_call  # type: ignore[assignment]
+    subprocess.check_output = check_output  # type: ignore[assignment]
+    subprocess.Popen = Popen  # type: ignore[assignment]
+    return original_run, original_check_call, original_check_output, original_popen
+
+
+def _restore_subprocess_patch(originals: tuple[Any, Any, Any, Any] | None) -> None:
+    if originals is None:
+        return
+    subprocess.run, subprocess.check_call, subprocess.check_output, subprocess.Popen = originals  # type: ignore[assignment]
+
+
 def load_hooks(task: TaskSpec) -> Any | None:
     assert task.task_dir is not None
     return _load_module(task.task_dir / task.hooks_module, f"hooks_{task.task_id.replace('-', '_')}")
@@ -77,4 +126,8 @@ def run_oracle(task: TaskSpec, workspace: Path) -> dict[str, Any]:
             "outcome_score": 0.0,
             "error": "oracle module missing score_workspace(workspace)",
         }
-    return dict(fn(workspace))
+    patch_state = _patch_windows_python3_subprocess()
+    try:
+        return dict(fn(workspace))
+    finally:
+        _restore_subprocess_patch(patch_state)

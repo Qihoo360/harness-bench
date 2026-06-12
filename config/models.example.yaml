@@ -83,6 +83,11 @@
       "command": "my-agent-cli",
       "session_prefix": "clawbenchv2",
       "args": ["run", "--workspace", "{workspace}", "--prompt-file", "{prompt_file}"]
+    },
+    "ga-local": {
+      "adapter": "ga_agent",
+      "timeout_sec": 600,
+      "model": "gpt-5.4"
     }
   }
 }

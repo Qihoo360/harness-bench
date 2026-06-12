@@ -5,6 +5,8 @@ config/nanobot.json
 config/nullclaw.json
 config/picoclaw.json
 config/zeroclaw.toml
+config/models.local.yaml
+config/models.local.json
 data/
 data_openclaw_kimi2_5/
 data_/

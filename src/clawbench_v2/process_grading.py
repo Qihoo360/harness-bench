@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import re
+import sys
 import tomllib
 import urllib.error
 import urllib.request
@@ -204,7 +207,16 @@ def _build_rubric_context(transcript_path: Path) -> str:
     graph = _build_graph(transcript_path)
     lines = ["=== TASK (first user message) ===", _extract_first_user_text(transcript_path) or "(no user message found)", "", "=== GRAPH ===", json.dumps(graph.get("stats", {}), ensure_ascii=False, indent=2), "", "--- Nodes ---"]
     for n in graph["nodes"]:
-        lines.append(f"{n['id']} | {n['kind']} | {n['label']}")
+        meta = n.get("meta") if isinstance(n.get("meta"), dict) else {}
+        details: list[str] = []
+        tool_call_id = meta.get("toolCallId")
+        if tool_call_id:
+            details.append(f"toolCallId={tool_call_id}")
+        preview = meta.get("preview")
+        if preview:
+            details.append(f"preview={preview}")
+        suffix = f" | {'; '.join(details)}" if details else ""
+        lines.append(f"{n['id']} | {n['kind']} | {n['label']}{suffix}")
     lines.append("")
     lines.append("--- Edges ---")
     for e in graph["edges"]:
@@ -384,30 +396,178 @@ def _load_chat_credentials_from_hermes(path: Path) -> tuple[str | None, str | No
     
     return None, None, None
 
+def _iter_json_objects(text: str):
+    """Yield every top-level {...} JSON object found in text, in order."""
+    depth = 0
+    start = -1
+    in_str = False
+    escape = False
+    for i, ch in enumerate(text):
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}":
+            if depth > 0:
+                depth -= 1
+                if depth == 0 and start >= 0:
+                    chunk = text[start : i + 1]
+                    try:
+                        obj = json.loads(chunk)
+                        if isinstance(obj, dict):
+                            yield obj
+                    except json.JSONDecodeError:
+                        pass
+                    start = -1
+
+
+def _looks_like_scoring(obj: dict[str, Any]) -> bool:
+    """A scoring object has a numeric 'total' or a 'scores' dict or numeric dimensions
+    in [0,1]. Plan/status metadata objects (e.g. {"plan":[...]}) are rejected."""
+    if isinstance(obj.get("total"), (int, float)):
+        return True
+    if isinstance(obj.get("scores"), dict) and obj["scores"]:
+        return True
+    _reserved = {"scores", "total", "notes", "vision_breakdown"}
+    numeric_dims = [
+        v for k, v in obj.items()
+        if k not in _reserved and isinstance(v, (int, float))
+    ]
+    # Require at least 2 numeric dimensions in the unit interval to qualify as a flat
+    # scoring object (avoids matching {"step": 1} or single-count metadata).
+    return len(numeric_dims) >= 2 and all(0.0 <= float(v) <= 1.0 for v in numeric_dims)
+
+
 def _parse_json_object(text: str) -> dict[str, Any] | None:
     text = text.strip()
+    # Prefer a fenced ```json block if it parses and looks like a scoring result.
     match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
     if match:
         try:
-            return json.loads(match.group(1))
+            fenced = json.loads(match.group(1))
+            if isinstance(fenced, dict) and _looks_like_scoring(fenced):
+                return fenced
         except json.JSONDecodeError:
             pass
-    try:
-        start = text.index("{")
-        depth = 0
-        for i, ch in enumerate(text[start:], start):
-            if ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    return json.loads(text[start : i + 1])
-    except Exception:
-        return None
+    # Scan every top-level JSON object; pick the LAST scoring-shaped one (graders
+    # often emit plan/status objects first, then the final verdict object).
+    candidates = [obj for obj in _iter_json_objects(text)]
+    scoring = [obj for obj in candidates if _looks_like_scoring(obj)]
+    if scoring:
+        return scoring[-1]
+    # Fall back to the last parsed object, then the first, to preserve old behavior.
+    if candidates:
+        return candidates[-1]
     return None
 
 
-def _run_llm_rubric(system: str, user: str, openclaw_config: Path | None = None, timeout_sec: int = 120) -> dict[str, Any]:
+
+def _format_rubric_response(content: Any) -> dict[str, Any]:
+    parsed = _parse_json_object(content) if isinstance(content, str) else None
+    if not parsed:
+        return {
+            "available": True,
+            "skipped": False,
+            "parse_error": True,
+            "raw_content": str(content)[:2000],
+            "scores": {},
+            "total": None,
+            "notes": "Failed to parse JSON from model output",
+        }
+
+    # Reserved keys that are not dimension scores
+    _reserved = {"scores", "total", "notes", "vision_breakdown"}
+
+    # Extract dimension scores: prefer the nested "scores" object; otherwise treat
+    # top-level numeric fields as flat dimension scores (some task rubrics emit a
+    # flat object like {"vision_recognition_accuracy": 1.0, ...} with no wrapper).
+    scores = parsed.get("scores") if isinstance(parsed.get("scores"), dict) else {}
+    if not scores:
+        flat = {
+            k: float(v)
+            for k, v in parsed.items()
+            if k not in _reserved and isinstance(v, (int, float))
+        }
+        if flat:
+            scores = flat
+
+    # Compute total: use explicit "total" when present and numeric; otherwise fall
+    # back to the arithmetic mean of the dimension scores (all task rubrics define
+    # total as the mean of their criteria).
+    total = parsed.get("total")
+    if isinstance(total, (int, float)):
+        total = float(total)
+    elif scores:
+        numeric = [float(v) for v in scores.values() if isinstance(v, (int, float))]
+        total = round(sum(numeric) / len(numeric), 4) if numeric else None
+    else:
+        total = None
+
+    return {
+        "available": True,
+        "skipped": False,
+        "parse_error": False,
+        "scores": scores,
+        "total": total,
+        "notes": str(parsed.get("notes", "")),
+        "raw_content": str(content)[:1500],
+        "vision_breakdown": parsed.get("vision_breakdown") if isinstance(parsed.get("vision_breakdown"), dict) else None,
+    }
+
+
+def _run_llm_rubric_via_ga(system: str, user: str, ga_root: Path, ga_config: str | None) -> dict[str, Any]:
+    cfg_name = (ga_config or "").strip()
+    if not cfg_name:
+        return {"available": False, "skipped": True, "reason": "missing GA rubric config"}
+    if not ga_root.is_dir():
+        return {"available": False, "skipped": True, "reason": "missing GA root"}
+    ga_root_str = str(ga_root)
+    inserted = False
+    if ga_root_str not in sys.path:
+        sys.path.insert(0, ga_root_str)
+        inserted = True
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            import llmcore  # type: ignore
+            sess = llmcore.resolve_session(cfg_name)
+            chunks = sess.raw_ask([
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ])
+            content = "".join(str(chunk) for chunk in chunks)
+    except Exception as exc:
+        return {"available": False, "skipped": True, "reason": f"ga rubric backend failed: {exc}"}
+    finally:
+        if inserted:
+            try:
+                sys.path.remove(ga_root_str)
+            except ValueError:
+                pass
+    result = _format_rubric_response(content)
+    result["backend"] = "ga_runtime"
+    result["ga_config"] = cfg_name
+    return result
+
+
+def _run_llm_rubric(
+    system: str,
+    user: str,
+    openclaw_config: Path | None = None,
+    timeout_sec: int = 120,
+    ga_root: Path | None = None,
+    ga_config: str | None = None,
+) -> dict[str, Any]:
     api_key = os.environ.get("RUBRIC_API_KEY") or os.environ.get("OPENAI_API_KEY")
     base_url = os.environ.get("RUBRIC_BASE_URL")
     model = os.environ.get("RUBRIC_MODEL")
@@ -430,6 +590,8 @@ def _run_llm_rubric(system: str, user: str, openclaw_config: Path | None = None,
             if api_key and base_url and model:
                 break
     if not api_key:
+        if ga_root is not None:
+            return _run_llm_rubric_via_ga(system, user, ga_root, ga_config)
         return {"available": False, "skipped": True, "reason": "missing rubric api key"}
     base = (base_url or "https://api.openai.com/v1").rstrip("/")
     mdl = model or "gpt-4o-mini"
@@ -456,27 +618,9 @@ def _run_llm_rubric(system: str, user: str, openclaw_config: Path | None = None,
         content = raw["choices"][0]["message"]["content"]
     except Exception:
         return {"available": False, "skipped": True, "reason": "unexpected rubric response shape", "raw": raw}
-    parsed = _parse_json_object(content) if isinstance(content, str) else None
-    if not parsed:
-        return {
-            "available": True,
-            "skipped": False,
-            "parse_error": True,
-            "raw_content": str(content)[:2000],
-            "scores": {},
-            "total": None,
-            "notes": "Failed to parse JSON from model output",
-        }
-    return {
-        "available": True,
-        "skipped": False,
-        "parse_error": False,
-        "scores": parsed.get("scores") if isinstance(parsed.get("scores"), dict) else {},
-        "total": float(parsed.get("total")) if isinstance(parsed.get("total"), (int, float)) else None,
-        "notes": str(parsed.get("notes", "")),
-        "raw_content": str(content)[:1500],
-        "vision_breakdown": parsed.get("vision_breakdown") if isinstance(parsed.get("vision_breakdown"), dict) else None,
-    }
+    result = _format_rubric_response(content)
+    result["backend"] = "chat_completions"
+    return result
 
 
 def resolve_transcript_path(adapter_metadata: dict[str, Any], session_id: str) -> Path | None:
@@ -497,6 +641,12 @@ def resolve_transcript_path(adapter_metadata: dict[str, Any], session_id: str) -
         if all_jsonl:
             return all_jsonl[0]
         return None
+
+    transcript_file = str(adapter_metadata.get("transcript_file") or "").strip()
+    if transcript_file:
+        path = Path(transcript_file)
+        if path.is_file():
+            return path
     
     # 添加Hermes支持
     hermes_home = str(adapter_metadata.get("hermes_home") or "").strip()
@@ -555,7 +705,25 @@ def run_process_rubric(task_dir: Path, task_id: str, adapter_metadata: dict[str,
         p = Path(cfg_path)
         if p.is_file():
             openclaw_cfg = p
-    result = _run_llm_rubric(system, user, openclaw_config=openclaw_cfg, timeout_sec=timeout_sec)
+    ga_root = None
+    ga_root_text = str(adapter_metadata.get("ga_root") or "").strip()
+    if ga_root_text:
+        p = Path(ga_root_text)
+        if p.is_dir():
+            ga_root = p
+    ga_config = str(
+        adapter_metadata.get("ga_config_resolved")
+        or adapter_metadata.get("ga_config_requested")
+        or ""
+    ).strip() or None
+    result = _run_llm_rubric(
+        system,
+        user,
+        openclaw_config=openclaw_cfg,
+        timeout_sec=timeout_sec,
+        ga_root=ga_root,
+        ga_config=ga_config,
+    )
     result["rubric_file"] = source
     result["transcript_file"] = str(transcript_path)
     result["rubric_context_chars"] = len(payload)

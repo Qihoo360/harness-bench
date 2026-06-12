@@ -54,7 +54,7 @@ def load_app_config(path: str | Path | None = None) -> AppConfig:
 
 def load_model_config(path: str | Path | None = None) -> dict[str, dict[str, Any]]:
     root = resolve_project_root()
-    cfg_path = _expand_path(path or os.getenv("CLAWBENCHV2_MODELS_CONFIG", "config/models.example.yaml"), root)
+    cfg_path = _expand_path(path or os.getenv("CLAWBENCHV2_MODELS_CONFIG", "config/models.yaml"), root)
     data = _load_yaml(cfg_path)
     models = data.get("models", {})
     if not isinstance(models, dict):
