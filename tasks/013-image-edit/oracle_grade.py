@@ -47,7 +47,7 @@ def score_workspace(workspace: Path) -> dict[str, Any]:
     w = workspace.resolve()
     out_dir = w / "out"
     in_dir = w / "in"
-    task_dir = w.parent.parent
+    task_dir = Path(__file__).resolve().parent
     gt_path = task_dir / "ground_truth.json"
     gt = json.loads(gt_path.read_text(encoding="utf-8")) if gt_path.exists() else {}
 
