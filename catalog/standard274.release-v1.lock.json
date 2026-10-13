@@ -1042,8 +1042,8 @@
       "task_definition_sha256": "96b384195d30ef30cd2850abfee89d052f7503d1c9094802e592bdaa9a05eeae"
     },
     "259-editable-management-review-deck": {
-      "complete_package_sha256": "1e0f94ddf39240063be4da22342e9fd938dfc8e072bc83091700a82d960df1a3",
-      "task_definition_sha256": "f8a0036c18545b47c5990cb15e897ffd9f64987f932250fd412c307279ed8ec4"
+      "complete_package_sha256": "460d37237471e6d4b826de053ed49f49e038f201046887c90170c81496341810",
+      "task_definition_sha256": "f908f74078972b11b3ea201f439e9ed80464356d1ecbd0e8e08795fa3976ddee"
     },
     "260-batch-presentation-standardization": {
       "complete_package_sha256": "4379c50e45435fe4d5262cdcd027c4ffe6cea58311b42f45606ff7c2752a8284",
@@ -1054,20 +1054,20 @@
       "task_definition_sha256": "428f56a64fc89c32c6293b2797599d0b01dcf67b6324eded4bed2fe0559b5bc2"
     },
     "262-user-service-registration-repair": {
-      "complete_package_sha256": "91df10bf2b5ac4698966f940b843a04ed90ce1bfdda6dbbe242b70e7cc1ff08f",
-      "task_definition_sha256": "5eca96562d21e7f3cefd504514b221cb1c20d448e746d6b7f0f5251e867f8abb"
+      "complete_package_sha256": "bebaf063a2ee99148a7fc62cf4be954121f16a7e5fbe66fed7b353be1120421d",
+      "task_definition_sha256": "5c8da687f4d9cf611314ba10c2f6897393caf0c0ba5e89be7c1ad677b0616335"
     },
     "263-stateful-python-rpc-service": {
-      "complete_package_sha256": "b5e0b7e3f3c4af416df43d3f4eb495983a60a24ef0ff59dd0e22b73e97fc2506",
-      "task_definition_sha256": "cfc61d50e603ff136e17b670028423244f4eedd3b1fca03927af6e0d8472ac63"
+      "complete_package_sha256": "990d49bc1ae6fc0b80f2c98b8649fb8e8fe7f68c10d05132274c4d6f4db21b35",
+      "task_definition_sha256": "793584e044c46992009e1050ae20471e4c75fed8ce177506efcf3953a6970620"
     },
     "264-node-record-processing-contract": {
-      "complete_package_sha256": "c3298faf4d7a40e76138ed48ede399492256ea4af29e8d8f61225377bac41d14",
-      "task_definition_sha256": "138ca786723deb2637e7467bc0113725994964f23132430490459808fa8f68a9"
+      "complete_package_sha256": "ed8133f81783e89e27e8406ff2719a8d25b0a4e21c04639c388ffc22bf93be97",
+      "task_definition_sha256": "894f7b6874f9d9a8ab2ab691f675c582f455c7938ffd38e975e07c7e475142ce"
     },
     "265-weekly-operations-brief-generator": {
-      "complete_package_sha256": "54abf53b8a6e415d7d27156df704c148eafc6b82d3ae9bfcb9a5ba500d6f4647",
-      "task_definition_sha256": "3c53d52da3a277a64e97357ba47688e2b64e507346b6ee10bde8ba31138e3303"
+      "complete_package_sha256": "8487c0ab1557955ac0e8ae30d7caee6cfa17bc63988c679a0ecbf24418f90967",
+      "task_definition_sha256": "09147d9b5b9c34bf1d37a7ffb8368087b2ca54b100ffa07f1952b6b95471d6fc"
     },
     "266-evidence-grounded-travel-plan": {
       "complete_package_sha256": "f0c5190efb5cf8b2a59b4ed36b366905164209e71fe6843560703a2d6538f0b6",
