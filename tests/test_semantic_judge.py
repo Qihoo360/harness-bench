@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import io
+import urllib.error
 from unittest import mock
 
 import pytest
 
 from harnessbench.grading.semantic_judge import (
+    JUDGE_MAX_TOKENS,
     SemanticJudgeError,
     chat_completions_url,
     controller_reachable_base_url,
@@ -254,7 +257,51 @@ def test_openai_compatible_endpoint_normalization() -> None:
     )
 
 
-def test_one_call_uses_the_agent_model_and_preserves_raw_evidence() -> None:
+@pytest.mark.parametrize(
+    ("base_url", "expected"),
+    [
+        (
+            "https://api-cdn.thehive.ai/api/v3",
+            "https://api-cdn.thehive.ai/api/v3/chat/completions",
+        ),
+        (
+            "https://api-cdn.thehive.ai/api/v3/",
+            "https://api-cdn.thehive.ai/api/v3/chat/completions",
+        ),
+        (
+            "https://api-cdn.thehive.ai/api/v3/chat/completions",
+            "https://api-cdn.thehive.ai/api/v3/chat/completions",
+        ),
+        (
+            "https://api-cdn.thehive.ai/api/v3?route=judge",
+            "https://api-cdn.thehive.ai/api/v3/chat/completions?route=judge",
+        ),
+    ],
+)
+def test_endpoint_preserves_the_provider_api_prefix(
+    base_url: str, expected: str
+) -> None:
+    assert chat_completions_url(base_url) == expected
+
+
+@pytest.mark.parametrize(
+    ("base_url", "upstream_api_key", "expected_url"),
+    [
+        (
+            "http://model:8000/v1",
+            None,
+            "http://model:8000/v1/chat/completions",
+        ),
+        (
+            "https://api-cdn.thehive.ai/api/v3",
+            "judge-test-secret",
+            "https://api-cdn.thehive.ai/api/v3/chat/completions",
+        ),
+    ],
+)
+def test_one_call_uses_the_agent_model_and_preserves_raw_evidence(
+    base_url: str, upstream_api_key: str | None, expected_url: str
+) -> None:
     response_body = json.dumps(
         {
             "choices": [
@@ -309,8 +356,9 @@ def test_one_call_uses_the_agent_model_and_preserves_raw_evidence() -> None:
     ):
         result = run_semantic_judge(
             _request(),
-            base_url="http://model:8000/v1",
+            base_url=base_url,
             agent_model="gemma-4-31b",
+            upstream_api_key=upstream_api_key,
         )
 
     assert result["status"] == "completed"
@@ -318,7 +366,38 @@ def test_one_call_uses_the_agent_model_and_preserves_raw_evidence() -> None:
     assert result["model_source"] == "agent"
     assert result["raw_output"]
     assert len(captured) == 2
+    assert captured[0].full_url == expected_url
+    assert captured[0].get_header("Authorization") == (
+        f"Bearer {upstream_api_key or 'local-vllm-no-auth'}"
+    )
+    if upstream_api_key is not None:
+        assert upstream_api_key not in json.dumps(result)
     sent = json.loads(captured[0].data.decode())
     assert sent["model"] == "gemma-4-31b"
-    assert sent["max_tokens"] == 4096
+    assert sent["max_tokens"] == JUDGE_MAX_TOKENS
     assert sent["response_format"] == {"type": "json_object"}
+
+
+def test_credential_is_redacted_from_persisted_judge_diagnostics() -> None:
+    secret = "judge-test-secret"
+    error = urllib.error.HTTPError(
+        "https://api-cdn.thehive.ai/api/v3/chat/completions",
+        401,
+        f"Unauthorized for {secret}",
+        {},
+        io.BytesIO(json.dumps({"error": f"bad key {secret}"}).encode()),
+    )
+    with mock.patch(
+        "harnessbench.grading.semantic_judge.urllib.request.urlopen",
+        side_effect=error,
+    ):
+        result = run_semantic_judge(
+            _request(),
+            base_url="https://api-cdn.thehive.ai/api/v3",
+            agent_model="glm-5.3-flash",
+            upstream_api_key=secret,
+        )
+    assert result["status"] == "error"
+    assert secret not in json.dumps(result)
+    assert "***" in result["raw_output"]
+    assert "***" in result["error"]
