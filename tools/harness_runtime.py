@@ -103,6 +103,15 @@ SPECS = {
         docker_context=HARNESS_DOCKER_DIR / "codex",
         trace_complete=True,
     ),
+    "antigravity": HarnessSpec(
+        harness_id="antigravity",
+        version="1.3.3",
+        image="harnessbench/antigravity:1.3.3",
+        protocol="chat_completions",
+        config_name="config.json",
+        docker_context=HARNESS_DOCKER_DIR / "antigravity",
+        trace_complete=True,
+    ),
 }
 
 
@@ -118,8 +127,7 @@ def harness_source_sha256(spec: HarnessSpec) -> str:
         raise ValueError(f"harness has no Docker source: {spec.harness_id}")
     digest = hashlib.sha256()
     sources = [
-        spec.docker_context / "Dockerfile",
-        spec.docker_context / "entrypoint.sh",
+        *sorted(p for p in spec.docker_context.iterdir() if p.is_file()),
         *HARNESS_SHARED_SOURCE_FILES,
     ]
     for path in sources:
@@ -386,6 +394,18 @@ def render_harness_config(
             'wire_api = "responses"\n'
             "supports_websockets = false\n"
         )
+
+    if spec.harness_id == "antigravity":
+        config = {
+            "base_url": base_url,
+            "model": model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "context_window": context_window,
+            "max_turns": max_agent_turns,
+            "thinking": effort,
+        }
+        return json.dumps(config, ensure_ascii=False, indent=2) + "\n"
 
     raise ValueError(f"no config renderer for {spec.harness_id}")
 

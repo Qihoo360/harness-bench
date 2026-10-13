@@ -40,7 +40,7 @@ reported at the model-harness level.
 |---|---|
 | **Tasks** | 300 sandboxed offline workflow tasks: 274 general and 26 multimodal (browser-verified frontend) |
 | **Taxonomy** | 6 task families, 17 subcategories ([details](docs/TASK_TAXONOMY_V3.md)) |
-| **Harnesses** | OpenClaw, Claude Code, Codex, Hermes, Nanobot, Goose, OpenCode, each in its own Docker image |
+| **Harnesses** | OpenClaw, Antigravity, Claude Code, Codex, Hermes, Nanobot, Goose, OpenCode, each in its own Docker image |
 | **Grading** | 1,408 scored work modules plus safety gates, checked by hidden task-specific oracles in an offline grader container |
 | **Evidence** | Every trial keeps final artifacts, provider transactions, a normalized trajectory and a session summary |
 
@@ -102,8 +102,8 @@ and grader images already contain the required frontend and browser toolchain:
 python tools/run_benchmark.py   --suite-root suites/multimodal26   --base-url "$HB_MODEL_URL"   --model gemma-4-31b-it   --model-service-id "$HB_MODEL_SERVICE_ID"   --harness openclaw   --workers 4   --temperature 1   --run-root artifacts/evaluations/multimodal26-shard-0
 ```
 
-Select another harness with `--harness` (`openclaw`, `claude-code`, `codex`,
-`hermes`, `nanobot`, `goose`, `opencode`). For production sharding and
+Select another harness with `--harness` (`openclaw`, `antigravity`, `claude-code`,
+`codex`, `hermes`, `nanobot`, `goose`, `opencode`). For production sharding and
 model-service freezing, follow the
 [CPU Docker + GPU vLLM runbook](docs/CPU_DOCKER_GPU_VLLM_RUNBOOK.md).
 

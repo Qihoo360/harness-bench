@@ -232,6 +232,23 @@ class HarnessRuntimeTests(unittest.TestCase):
         self.assertEqual(config["permission"]["bash"], "allow")
         self.assertEqual(config["model"], "harnessbench/gemma-4-31b-it")
 
+    def test_antigravity_configuration_and_entrypoint(self) -> None:
+        config = json.loads(self.render("antigravity"))
+        self.assertEqual(config["model"], "gemma-4-31b-it")
+        self.assertEqual(config["base_url"], "http://model.internal:8000/v1")
+        self.assertEqual(config["max_tokens"], 8192)
+        self.assertEqual(config["thinking"], "high")
+
+        entrypoint = (
+            SPECS["antigravity"].docker_context / "entrypoint.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"read_url(*)"', entrypoint)
+        self.assertNotIn('"allow"', entrypoint)
+        self.assertIn("agy --print", entrypoint)
+        self.assertIn("--dangerously-skip-permissions", entrypoint)
+        self.assertIn("litellm", entrypoint)
+        self.assertIn("litellm_config.yaml", entrypoint)
+
     def test_protocol_specific_harnesses(self) -> None:
         claude = json.loads(self.render("claude-code"))
         codex = self.render("codex")
@@ -393,6 +410,38 @@ class HarnessRuntimeTests(unittest.TestCase):
                 for index in env_positions
             )
         )
+
+    @mock.patch("harness_runtime.docker")
+    def test_antigravity_contract_round_execution(
+        self,
+        docker_mock: mock.Mock,
+    ) -> None:
+        docker_mock.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+        with tempfile.TemporaryDirectory() as root:
+            base = Path(root)
+            workspace = base / "workspace"
+            runtime = base / "runtime"
+            controller = base / "controller"
+            trace = base / "trace"
+            for path in (workspace, runtime, controller, trace):
+                path.mkdir(parents=True)
+            run_contract_round(
+                spec=SPECS["antigravity"],
+                container_name="hb-test-antigravity",
+                image="harnessbench/antigravity:test",
+                workspace=workspace,
+                runtime=runtime,
+                state_volume="hb-test-state",
+                controller_dir=controller,
+                trace_dir=trace,
+                timeout=60,
+                labels=["--label", "test=true"],
+            )
+
+        run_arguments = docker_mock.call_args_list[0].args
+        self.assertIn("host.docker.internal:host-gateway", run_arguments)
+        self.assertIn("--dns", run_arguments)
+        self.assertIn("127.0.0.1", run_arguments)
 
     def test_codex_is_strictly_non_interactive(self) -> None:
         entrypoint = (SPECS["codex"].docker_context / "entrypoint.sh").read_text()

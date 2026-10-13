@@ -31,6 +31,8 @@ venv/
 .env.*
 !.env.example
 /config/
+*_key.txt
+*api*.txt
 
 # Evaluation output and local working state
 /artifacts/

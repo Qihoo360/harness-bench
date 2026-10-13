@@ -26,6 +26,7 @@ docker/
 │   ├── requirements.lock
 │   └── verify_toolchain.py
 ├── harnesses/
+│   ├── antigravity/
 │   ├── claude-code/
 │   ├── codex/
 │   ├── goose/
@@ -155,8 +156,8 @@ Release images must use immutable digests. The current runner pins:
 - `harnessbench/openclaw:2026.5.26-tasktools`, derived from the pinned
   OpenClaw `2026.5.26-slim` digest and a pinned Python 3.12 Bookworm toolchain
   plus checksum-pinned `amtool` 0.32.1;
-- exact released versions of Hermes, nanobot, goose, OpenCode, Claude Code and
-  Codex CLI listed in `tools/harness_runtime.py`;
+- exact released versions of Antigravity, Hermes, nanobot, goose, OpenCode,
+  Claude Code and Codex CLI listed in `tools/harness_runtime.py`;
 - `python:3.10-slim` for trusted staging;
 - a locally built `harnessbench/grader:local` image based on pinned
   `python:3.10-bookworm`, including Git 2.39.5 for the Git-state

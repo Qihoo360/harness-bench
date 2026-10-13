@@ -1017,7 +1017,11 @@ def hook_context(
         # Match the controller identity so bind mounts also work on NFS and
         # rootless Docker hosts; the untrusted harness still uses its fixed,
         # non-root image user.
-        controller_user = f"{os.getuid()}:{os.getgid()}"
+        controller_user = (
+            f"{os.getuid()}:{os.getgid()}"
+            if hasattr(os, "getuid") and hasattr(os, "getgid")
+            else "1000:1000"
+        )
         return docker(
             "run",
             "--rm",
