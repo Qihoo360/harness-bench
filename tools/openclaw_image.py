@@ -6,7 +6,12 @@ import hashlib
 import os
 from pathlib import Path
 
-from container_runtime import CommandError, docker, docker_build_proxy_args
+from container_runtime import (
+    CommandError,
+    docker,
+    docker_build_provenance_args,
+    docker_build_proxy_args,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -98,7 +103,7 @@ def build_openclaw_image() -> str:
         docker(
             "build",
             "--pull=false",
-            "--provenance=false",
+            *docker_build_provenance_args(),
             *docker_build_proxy_args(),
             *build_args,
             "--build-arg",

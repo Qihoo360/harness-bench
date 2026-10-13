@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
-from container_runtime import docker
+from container_runtime import docker, docker_build_provenance_args
 
 
 BUILDER_ID = "harnessbench-task-environment-v1"
@@ -760,7 +760,7 @@ class TaskEnvironmentBuilder:
             command = [
                 "build",
                 "--pull=false",
-                "--provenance=false",
+                *docker_build_provenance_args(),
                 "--network",
                 "none",
                 "--build-arg",

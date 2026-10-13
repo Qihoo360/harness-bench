@@ -17,9 +17,18 @@ RUN apt-get update \
 # --ignore-scripts skips onnxruntime-node's broken postinstall (its npm
 # tarball omits install-utils.js) and the native binary downloads for
 # sharp/@napi-rs/canvas. Neither is required for the text-workflow suite;
-# their host providers are prebuilt for the desktop runtime. Mixdog itself
-# ships no install script.
+# their host providers are prebuilt for the desktop runtime. Mixdog's own
+# postinstall is NOT one of those: it installs the graph/patch/spawn native
+# tools. The task container has no outbound network, so a binary that is only
+# fetched lazily at runtime never arrives and every `shell` call fails with
+# `[shell-tool-failed] [spawn failed]`. Run it here, at build time, where the
+# download is reachable, so the verified binaries ship inside the image.
 RUN npm install --global --ignore-scripts "mixdog@${MIXDOG_VERSION}" \
+    && node /usr/local/lib/node_modules/mixdog/scripts/prune-embedding-runtime.mjs \
+    && node /usr/local/lib/node_modules/mixdog/scripts/prepare-native-assets.mjs \
+    && test -x /usr/local/lib/node_modules/mixdog/native-tools/mixdog-spawn \
+    && test -x /usr/local/lib/node_modules/mixdog/native-tools/mixdog-graph \
+    && test -x /usr/local/lib/node_modules/mixdog/native-tools/mixdog-patch \
     && npm cache clean --force
 
 # BEGIN MULTIMODAL FRONTEND AGENT TOOLCHAIN

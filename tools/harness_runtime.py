@@ -24,7 +24,7 @@ from typing import Any
 
 import yaml
 
-from container_runtime import docker, docker_build_proxy_args
+from container_runtime import docker, docker_build_provenance_args, docker_build_proxy_args
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -173,7 +173,7 @@ def build_harness_image(spec: HarnessSpec) -> str:
     docker(
         "build",
         "--pull=false",
-        "--provenance=false",
+        *docker_build_provenance_args(),
         *docker_build_proxy_args(),
         *build_args,
         "--label",
