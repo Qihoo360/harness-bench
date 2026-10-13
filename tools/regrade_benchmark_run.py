@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
-"""Regrade a completed merged run without regenerating agent trajectories.
+"""Regrade a preserved HarnessBench run without regenerating trajectories.
 
-The source run is never modified.  Its task workspaces, traces, and execution
-metadata are copied into a new audit run; current deterministic outcome tests
-are then applied to the frozen workspaces.  Existing compatible Judge records
-are reused, while newly configured bounded Judges may be called explicitly.
+Two modes are supported:
+
+``merged`` (default)
+    A completed merged public run is copied into a new audit run and current
+    deterministic outcome tests are applied to the frozen workspaces.  Existing
+    compatible Judge records are reused, while newly configured bounded Judges
+    may be called explicitly.
+
+``--docker``
+    A preserved partial run produced by ``tools/run_benchmark.py`` is copied
+    into a resumable output run.  Every existing scoreable result is regraded
+    inside the trusted grader image against the frozen task snapshot, the
+    frozen task-definition identities are validated first, and the output
+    summary is rewritten for the current controller revision so that
+    ``run_benchmark.py`` can later resume only the unfinished tasks.  Agent
+    trajectories, workspaces, provider traces, execution settings and the old
+    scores are preserved; the source run is never modified.
 """
 
 from __future__ import annotations
@@ -26,10 +39,13 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-MAINTENANCE = ROOT / "tools" / "task_maintenance"
-for path in (SRC, MAINTENANCE):
+TOOLS = ROOT / "tools"
+MAINTENANCE = TOOLS / "task_maintenance"
+for path in (SRC, TOOLS, MAINTENANCE):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
+
+import run_benchmark  # noqa: E402
 
 from common import score_task_workspace  # noqa: E402
 from harnessbench.grading.outcome_cases import aggregate_case_checks  # noqa: E402
@@ -336,12 +352,256 @@ def _refresh_summary(summary: dict[str, Any], *, output: Path) -> None:
     )
 
 
+def _docker_regrade(
+    source: Path,
+    output: Path,
+    *,
+    base_url: str,
+    model: str,
+    upstream_api_key: str | None = None,
+) -> dict[str, Any]:
+    """Regrade saved answers with the original Docker and task contracts."""
+    source = source.resolve()
+    output = output.resolve()
+    if output == source or source in output.parents:
+        raise ValueError("output must be outside the source run")
+    if output.exists():
+        raise ValueError(f"output already exists: {output}")
+    summary = json.loads((source / "summary.json").read_text(encoding="utf-8"))
+    if summary["model"] != model or summary["base_url"] != base_url:
+        raise ValueError("regrade must preserve the source model and base URL")
+    if summary.get("experimental_task_environments"):
+        raise ValueError("Docker regrade requires the standard task environment")
+    source_snapshot = source / "suite_snapshot"
+    manifest = json.loads(
+        (source_snapshot / "manifest.json").read_text(encoding="utf-8")
+    )
+    tree_sha, task_count = run_benchmark.task_tree_sha256(source_snapshot / "tasks")
+    if (
+        manifest.get("schema_version") != 1
+        or task_count != run_benchmark.BENCHMARK_TASK_COUNT
+        or manifest.get("task_count") != task_count
+        or manifest.get("task_tree_sha256") != tree_sha
+        or summary.get("suite_snapshot_sha256") != tree_sha
+        or manifest.get("controller_definition_sha256")
+        != summary.get("controller_definition_sha256")
+    ):
+        raise ValueError("source suite snapshot failed its integrity manifest")
+    tasks = run_benchmark.load_benchmark_tasks(source_snapshot / "tasks")
+    rows = {row["task_id"]: row for row in summary["tasks"]}
+    results: dict[str, dict[str, Any]] = {}
+    for task in tasks:
+        row = rows[task.task_id]
+        if row["task_definition_sha256"] != task.definition_sha256:
+            raise ValueError(f"{task.task_id}: source task definition changed")
+        result_path = source / "tasks" / task.task_id / "result.json"
+        if result_path.is_file():
+            result = json.loads(result_path.read_text(encoding="utf-8"))
+            if (
+                result.get("task_id") != task.task_id
+                or result.get("task_definition_sha256") != task.definition_sha256
+            ):
+                raise ValueError(f"{task.task_id}: result task definition changed")
+            results[task.task_id] = result
+        elif row["status"] in SCOREABLE:
+            raise ValueError(f"{task.task_id}: scoreable result is missing")
+        # A worker crash can leave a summary-only infrastructure_error with no
+        # result artifact.  Keep it for --retry-infrastructure instead of
+        # rejecting the whole preserved run.
+    runtime, runtime_id = run_benchmark.controller_runtime_identity()
+    if runtime_id != summary["controller_runtime_id"]:
+        raise ValueError("source controller runtime differs from the current runtime")
+    runtime_images = run_benchmark.reuse_recorded_runtime_images(source)
+    grader_image = runtime_images[run_benchmark.GRADER_IMAGE]
+
+    shutil.copytree(
+        source,
+        output,
+        symlinks=True,
+        ignore=lambda path, names: (
+            ["suite_snapshot"] if Path(path) == source else []
+        ),
+    )
+    previous_tasks_dir = run_benchmark.TASKS_DIR
+    run_benchmark.TASKS_DIR = source_snapshot / "tasks"
+    try:
+        snapshot_tasks, copied_sha, controller_sha = (
+            run_benchmark.freeze_suite_snapshot(output)
+        )
+    finally:
+        run_benchmark.TASKS_DIR = previous_tasks_dir
+    if copied_sha != tree_sha:
+        raise ValueError("regrade copy changed the frozen task definitions")
+    tasks = run_benchmark.load_benchmark_tasks(snapshot_tasks)
+    summary["controller_definition_sha256"] = controller_sha
+    for task_id, row in rows.items():
+        if task_id in results:
+            row["status"] = results[task_id]["status"]
+            row["result_path"] = str(output / "tasks" / task_id / "result.json")
+    run_benchmark.atomic_json(output / "summary.json", summary)
+    state_fields = (
+        "model", "base_url", "model_service_id", "harness_protocol",
+        "harness_version", "trace_complete", "workers", "max_tokens",
+        "context_window", "temperature", "data_parallel_rank", "thinking",
+        "timeout_override", "max_agent_turns", "runtime_images", "isolation",
+        "shard_index", "shard_count", "suite_snapshot_sha256", "grading",
+    )
+    state = run_benchmark.SuiteState(
+        run_root=output,
+        tasks=tasks,
+        image=summary["harness_image"],
+        harness_id=summary["harness"],
+        selected_task_ids={
+            task_id for task_id, row in rows.items()
+            if row["status"] != "not_selected"
+        },
+        controller_sha256=controller_sha,
+        controller_runtime=runtime,
+        controller_runtime_id=runtime_id,
+        task_set_name=summary.get("task_set"),
+        selection_identity=summary.get("selection"),
+        **{field: summary[field] for field in state_fields},
+    )
+    run_benchmark.copy_dashboard(output)
+    report: dict[str, Any] = {
+        "schema_version": 1,
+        "source": str(source),
+        "output": str(output),
+        "source_controller_definition_sha256": manifest["controller_definition_sha256"],
+        "controller_definition_sha256": controller_sha,
+        "suite_snapshot_sha256": tree_sha,
+        "trajectory_generation": "unchanged",
+        "grading_workspaces": "source_readonly",
+        "source_result_count": len(results),
+        "regraded_task_ids": [],
+        "preserved_non_scoreable": [
+            task_id for task_id, result in results.items()
+            if result["status"] not in SCOREABLE
+        ],
+        "changes": [],
+        "status": "in_progress",
+    }
+    marker = output / run_benchmark.REGRADE_INCOMPLETE_MARKER
+    marker.write_text(
+        json.dumps({"source": str(source), "started_epoch": time.time()}) + "\n",
+        encoding="utf-8",
+    )
+    failures: list[dict[str, str]] = []
+    try:
+        for task in tasks:
+            original = results.get(task.task_id)
+            if original is None or original["status"] not in SCOREABLE:
+                continue
+            artifact = source / "tasks" / task.task_id
+            oracle = run_benchmark.run_grader(
+                task=task,
+                workspace=artifact / "workspace",
+                runtime=artifact / "runtime",
+                grader_control=artifact / "grader-control",
+                labels=[],
+                image=grader_image,
+            )
+            failure = run_benchmark.grader_contract_error(oracle)
+            if not failure:
+                run_benchmark.attach_semantic_judge(
+                    task=task,
+                    oracle_result=oracle,
+                    base_url=base_url,
+                    agent_model=model,
+                    data_parallel_rank=summary["data_parallel_rank"],
+                    upstream_api_key=upstream_api_key,
+                )
+                judge = oracle.get("semantic_judge") or {}
+                if judge.get("status") == "error":
+                    failure = str(judge.get("error") or "semantic judge failed")
+            if failure:
+                failures.append({"task_id": task.task_id, "error": failure})
+                print(
+                    f"[{task.task_id}] regrade failed: {failure}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                # Keep the preserved source score; a failed regrade must not be
+                # reported or resumed as a completed evaluation.
+                continue
+            result = {
+                **original,
+                "oracle": oracle,
+                "semantic_judge": oracle.get("semantic_judge"),
+                "outcome_score": oracle.get("outcome_score"),
+                "task_success": oracle.get("task_success"),
+                **run_benchmark.oracle_case_failure_metrics(oracle),
+                "required_artifacts": run_benchmark.authoritative_artifact_report(
+                    task, artifact / "workspace", oracle
+                ),
+                "regraded_from_run": str(source),
+                "regraded_epoch": time.time(),
+                "pre_regrade_outcome_score": original.get("outcome_score"),
+            }
+            result["review_flag"] = run_benchmark.review_flag(
+                status=result["status"],
+                score=result["outcome_score"],
+                task_success=result["task_success"],
+                artifacts=result["required_artifacts"],
+                error=result.get("error") or "",
+                safety_gate_failed=result["safety_gate_failed"],
+                failed_core_count=result["failed_core_count"],
+            )
+            result_path = output / "tasks" / task.task_id / "result.json"
+            run_benchmark.atomic_json(result_path, result)
+            fields = (
+                "outcome_score", "task_success", "required_artifacts",
+                "safety_gate_failed", "failed_gate_count", "failed_core_count",
+                "review_flag",
+            )
+            state.update(
+                task.task_id,
+                result_path=str(result_path),
+                **{field: result[field] for field in fields},
+            )
+            report["regraded_task_ids"].append(task.task_id)
+            if original.get("outcome_score") != result["outcome_score"]:
+                report["changes"].append({
+                    "task_id": task.task_id,
+                    "before": original.get("outcome_score"),
+                    "after": result["outcome_score"],
+                })
+            print(
+                f"[{task.task_id}] regraded "
+                f"{original.get('outcome_score')} -> {result['outcome_score']} "
+                f"judge={(oracle.get('semantic_judge') or {}).get('status', 'not_requested')}",
+                flush=True,
+            )
+        if failures:
+            report["failures"] = failures
+            raise RuntimeError(
+                f"{len(failures)} task(s) failed to regrade: "
+                + ", ".join(item["task_id"] for item in failures)
+            )
+        marker.unlink()
+        report["status"] = "completed"
+    except Exception as exc:
+        report["status"] = "failed"
+        report.setdefault("failures", failures)
+        report["error"] = f"{type(exc).__name__}: {exc}"
+        raise
+    finally:
+        report["regraded_count"] = len(report["regraded_task_ids"])
+        run_benchmark.atomic_json(output / "regrade_report.json", report)
+    return report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("source", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--model", default="gemma-4-31b-it")
+    parser.add_argument(
+        "--docker", action="store_true",
+        help="regrade a preserved partial run with its frozen Docker contracts",
+    )
+    parser.add_argument("--upstream-api-key-file")
     parser.add_argument("--judge-timeout-sec", type=int, default=600)
     parser.add_argument(
         "--judge-cache-run",
@@ -354,6 +614,21 @@ def main() -> None:
         help="reuse completed evidence-valid Judge sidecars when criterion IDs match",
     )
     args = parser.parse_args()
+    try:
+        upstream_api_key = (
+            run_benchmark.read_upstream_api_key_file(args.upstream_api_key_file)
+            if args.upstream_api_key_file else None
+        )
+        if args.docker:
+            report = _docker_regrade(
+                args.source, args.output,
+                base_url=args.base_url, model=args.model,
+                upstream_api_key=upstream_api_key,
+            )
+            print(json.dumps(report, ensure_ascii=False, indent=2), flush=True)
+            return
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise SystemExit(str(exc)) from exc
 
     source = args.source.resolve()
     output = args.output.resolve()
@@ -507,6 +782,7 @@ def main() -> None:
                             base_url=args.base_url,
                             agent_model=args.model,
                             configured_model=config["default_model"],
+                            upstream_api_key=upstream_api_key,
                             timeout_sec=args.judge_timeout_sec,
                         )
                         judge_sources[task_id] = "new_call"
