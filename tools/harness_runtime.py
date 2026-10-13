@@ -103,6 +103,15 @@ SPECS = {
         docker_context=HARNESS_DOCKER_DIR / "codex",
         trace_complete=True,
     ),
+    "mixdog": HarnessSpec(
+        harness_id="mixdog",
+        version="1.1.2",
+        image="harnessbench/mixdog:1.1.2",
+        protocol="chat_completions",
+        config_name="config.json",
+        docker_context=HARNESS_DOCKER_DIR / "mixdog",
+        trace_complete=False,
+    ),
 }
 
 
@@ -386,6 +395,17 @@ def render_harness_config(
             'wire_api = "responses"\n'
             "supports_websockets = false\n"
         )
+
+    if spec.harness_id == "mixdog":
+        config = {
+            "base_url": base_url,
+            "model": model,
+            "max_tokens": max_tokens,
+            "context_window": context_window,
+            "max_turns": max_agent_turns,
+            "thinking": thinking,
+        }
+        return json.dumps(config, ensure_ascii=False, indent=2) + "\n"
 
     raise ValueError(f"no config renderer for {spec.harness_id}")
 
