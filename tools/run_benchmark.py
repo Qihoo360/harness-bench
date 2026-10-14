@@ -3473,7 +3473,7 @@ def main() -> None:
     )
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--timeout", type=int)
-    parser.add_argument("--max-tokens", type=int, default=32768)
+    parser.add_argument("--max-tokens", type=int, default=65536)
     parser.add_argument("--context-window", type=int, default=200000)
     parser.add_argument("--max-agent-turns", type=int, default=150)
     parser.add_argument("--temperature", type=float, default=1.0)

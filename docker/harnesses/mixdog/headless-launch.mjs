@@ -26,7 +26,7 @@ if (!prompt) {
   process.exit(64);
 }
 const contextWindow = Number(process.env.MIXDOG_CONTEXT_WINDOW || 200000);
-const maxTokens = Number(process.env.MIXDOG_MAX_TOKENS || 32768);
+const maxTokens = Number(process.env.MIXDOG_MAX_TOKENS || 65536);
 const effort = process.env.MIXDOG_EFFORT || 'high';
 const maxTurns = Number(process.env.MIXDOG_MAX_TURNS || 150);
 void maxTokens; void maxTurns;
