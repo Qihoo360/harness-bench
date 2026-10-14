@@ -125,6 +125,11 @@ def prepare_runtime(context):
 def code_verdict(context,state):
     private=state['_private'];work=private/'execution';work.mkdir()
     case=private/'case';shutil.copytree(LEGACY,case,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+    # The suite snapshot is frozen read-only and copytree preserves those modes;
+    # this private copy is rewritten below (image digest, contract hash), so add
+    # the owner write bit while keeping every other mode bit intact.
+    for copied in [case,*case.rglob('*')]:
+        copied.chmod(copied.stat().st_mode | 0o200)
     n=CONFIG['case_number'];parent=os.environ.get('CPUQ_CONTAINER') or 'hb-native-'+secrets.token_hex(8)
     controller=parent+'-g20-'+secrets.token_hex(5)
     # Preserve the same host path inside controllers except Node's fixed /runtime contract.
@@ -168,7 +173,14 @@ def code_verdict(context,state):
     cid=docker(args);(work/'controller-id').write_text(cid)
     try:
         docker(['start',cid]);rc=docker(['wait',cid],1200)
-        result=json.loads((work/'result.json').read_text())
+        result_path=work/'result.json'
+        if not os.access(result_path,os.R_OK):
+            # The controller writes result.json as uid 2048 mode 0600, which a
+            # non-root host user cannot read. Extract a copy through the Docker
+            # CLI, which materializes the archive for this user.
+            result_path=work/'result.host.json'
+            docker(['cp',f'{cid}:{inner}/result.json',str(result_path)])
+        result=json.loads(result_path.read_text())
         if rc!='0' or result.get('status')!='finished':raise RuntimeError('code verifier infrastructure failure: '+str(result.get('error',result.get('cleanup_errors','unknown'))))
         return result['verdict'],result['score']==1
     finally:

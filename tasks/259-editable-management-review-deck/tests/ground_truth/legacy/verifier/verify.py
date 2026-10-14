@@ -387,7 +387,7 @@ def main() -> int:
         args.result.write_text(payload, encoding="utf-8")
     else:
         sys.stdout.write(payload)
-    return 0 if result["verdict"] == "accept" else 2
+    return 0 if result["verdict"] == "accept" else 1
 
 
 if __name__ == "__main__":

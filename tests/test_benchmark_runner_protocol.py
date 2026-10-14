@@ -238,12 +238,16 @@ class GraderFailureAttributionTests(unittest.TestCase):
                 base_url="http://model:8000/v1",
                 agent_model="gemma-4-31b",
                 data_parallel_rank=2,
+                upstream_api_key="judge-test-secret",
             )
 
         self.assertEqual(score["outcome_score"], 0.8)
         self.assertEqual(score["semantic_judge"], completed)
         self.assertNotIn("semantic_judge_request", score)
         self.assertEqual(judge.call_args.kwargs["agent_model"], "gemma-4-31b")
+        self.assertEqual(
+            judge.call_args.kwargs["upstream_api_key"], "judge-test-secret"
+        )
 
     def test_semantic_judge_skips_when_oracle_contract_failed(self) -> None:
         task = BenchmarkTask(

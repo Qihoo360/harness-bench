@@ -21,11 +21,22 @@ from harnessbench.grading.structured_io import markdown_visible_text
 
 
 JUDGE_SCHEMA_VERSION = 1
-JUDGE_MAX_TOKENS = 4096
+# Reasoning-capable judges may spend the whole completion budget in a
+# separate reasoning field before emitting the JSON verdicts.  A budget that
+# only fits the answer produced empty content on GLM-5.3-Flash, so the ceiling
+# now covers both the reasoning trace and the final JSON object.
+JUDGE_MAX_TOKENS = 16384
 
 
 class SemanticJudgeError(RuntimeError):
     """The supplemental judge request or response is unusable."""
+
+
+def _redact_secret(text: str | None, secret: str | None) -> str | None:
+    """Keep a controller credential out of persisted judge diagnostics."""
+    if not text or not secret:
+        return text
+    return text.replace(secret, "***")
 
 
 def validate_judge_config(value: object) -> dict[str, Any]:
@@ -314,12 +325,15 @@ def validate_verdict_evidence(
 
 
 def chat_completions_url(base_url: str) -> str:
-    rendered = base_url.rstrip("/")
-    if rendered.endswith("/chat/completions"):
-        return rendered
-    if not rendered.endswith("/v1"):
-        rendered += "/v1"
-    return rendered + "/chat/completions"
+    parsed = urllib.parse.urlsplit(base_url)
+    path = parsed.path.rstrip("/")
+    if not path:
+        path = "/v1"
+    if not path.endswith("/chat/completions"):
+        path += "/chat/completions"
+    return urllib.parse.urlunsplit(
+        (parsed.scheme, parsed.netloc, path, parsed.query, parsed.fragment)
+    )
 
 
 def controller_reachable_base_url(base_url: str) -> str:
@@ -341,6 +355,7 @@ def run_semantic_judge(
     agent_model: str,
     configured_model: str = "agent",
     data_parallel_rank: int | None = None,
+    upstream_api_key: str | None = None,
     timeout_sec: int = 300,
 ) -> dict[str, Any]:
     """Run exactly one judge call and return a fully auditable sidecar result."""
@@ -364,7 +379,7 @@ def run_semantic_judge(
     prompt_sha256 = hashlib.sha256(serialized).hexdigest()
     endpoint = chat_completions_url(controller_reachable_base_url(base_url))
     headers = {
-        "Authorization": "Bearer local-vllm-no-auth",
+        "Authorization": f"Bearer {upstream_api_key or 'local-vllm-no-auth'}",
         "Content-Type": "application/json",
     }
     if data_parallel_rank is not None:
@@ -397,7 +412,11 @@ def run_semantic_judge(
         }
         content = message.get("content") if isinstance(message, Mapping) else None
         if not isinstance(content, str) or not content.strip():
-            raise SemanticJudgeError("judge API response lacks message content")
+            raise SemanticJudgeError(
+                "judge API response lacks message content "
+                f"(finish_reason={api_diagnostic.get('finish_reason')}, "
+                f"reasoning_chars={api_diagnostic.get('reasoning_chars')})"
+            )
         verdicts = parse_judge_response(
             content,
             criterion_ids=normalized["criterion_ids"],
@@ -421,6 +440,7 @@ def run_semantic_judge(
             error_body = exc.read().decode("utf-8", errors="replace")[:4096]
         except Exception:
             error_body = ""
+        error_body = _redact_secret(error_body, upstream_api_key)
         return {
             "schema_version": JUDGE_SCHEMA_VERSION,
             "status": "error",
@@ -432,7 +452,10 @@ def run_semantic_judge(
             "raw_output": error_body or content,
             "verdicts": None,
             "api_diagnostic": api_diagnostic,
-            "error": f"HTTPError: HTTP {exc.code}: {exc.reason}",
+            "error": (
+                f"HTTPError: HTTP {exc.code}: "
+                f"{_redact_secret(str(exc.reason), upstream_api_key)}"
+            ),
         }
     except (OSError, UnicodeError, json.JSONDecodeError, SemanticJudgeError) as exc:
         return {
@@ -443,8 +466,11 @@ def run_semantic_judge(
             "model_source": model_source,
             "prompt_sha256": prompt_sha256,
             "prompt": messages,
-            "raw_output": content,
+            "raw_output": _redact_secret(content, upstream_api_key),
             "verdicts": None,
             "api_diagnostic": api_diagnostic,
-            "error": f"{type(exc).__name__}: {exc}",
+            "error": (
+                f"{type(exc).__name__}: "
+                f"{_redact_secret(str(exc), upstream_api_key)}"
+            ),
         }

@@ -108,6 +108,10 @@ TASKS_DIR = ROOT / "tasks"
 CATALOG_DIR = ROOT / "catalog"
 EVALUATIONS_DIR = ROOT / "artifacts" / "evaluations"
 DASHBOARD_SOURCE = ROOT / "dashboard"
+# A Docker regrade writes this marker while it rewrites a preserved run.  An
+# unfinished regrade must never be resumable, because its summary would mix
+# freshly graded rows with rows that still hold pre-regrade scores.
+REGRADE_INCOMPLETE_MARKER = ".regrade-incomplete"
 
 
 def _active_benchmark_manifest(catalog_dir: Path) -> tuple[str, int]:
@@ -2372,6 +2376,65 @@ def run_grader(
     return dict(json.loads(completed.stdout))
 
 
+def read_upstream_api_key_file(path: str | Path) -> str:
+    """Read a controller-only credential without including it in diagnostics."""
+    try:
+        key = Path(path).read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise ValueError(f"cannot read --upstream-api-key-file: {exc}") from exc
+    if not key:
+        raise ValueError("--upstream-api-key-file is empty")
+    if "\r" in key or "\n" in key:
+        raise ValueError("--upstream-api-key-file must contain one line")
+    return key
+
+
+def reuse_recorded_runtime_images(run_root: Path | None) -> dict[str, str]:
+    """Reuse the immutable images a prior run of this root already recorded.
+
+    Resuming an existing run must not rebuild an image whose identity is part
+    of the frozen evaluation semantics, so this verifies the recorded images
+    are still present instead of producing new ones.
+    """
+    if run_root is None or not (run_root / "summary.json").is_file():
+        raise ValueError(
+            "--reuse-recorded-images requires an existing run with summary.json"
+        )
+    summary = json.loads((run_root / "summary.json").read_text(encoding="utf-8"))
+    recorded = summary.get("runtime_images")
+    if not isinstance(recorded, dict) or not recorded:
+        raise ValueError("the existing run records no runtime images to reuse")
+    for reference, expected in recorded.items():
+        inspected = docker(
+            "image",
+            "inspect",
+            "--format",
+            "{{.Id}}",
+            reference,
+            check=False,
+        )
+        if "@" in reference:
+            # The grader Dockerfile pins an immutable manifest digest whose
+            # parent layer may exist only in the builder content store, so the
+            # recorded digest is authoritative rather than a local image tag.
+            continue
+        if inspected.returncode != 0 or inspected.stdout.strip() != expected:
+            raise ValueError(
+                "recorded runtime image is unavailable or changed: "
+                f"{reference} (expected {expected})"
+            )
+    return dict(recorded)
+
+
+def ensure_resumable_run(run_root: Path) -> None:
+    """Refuse to resume a run whose Docker regrade did not finish."""
+    if (run_root / REGRADE_INCOMPLETE_MARKER).is_file():
+        raise SystemExit(
+            "cannot resume a run whose Docker regrade did not finish; rerun "
+            f"tools/regrade_benchmark_run.py --docker for {run_root}"
+        )
+
+
 def attach_semantic_judge(
     *,
     task: BenchmarkTask,
@@ -2379,6 +2442,7 @@ def attach_semantic_judge(
     base_url: str,
     agent_model: str,
     data_parallel_rank: int | None,
+    upstream_api_key: str | None = None,
 ) -> None:
     """Run one judge call and apply only an explicitly bounded case fallback."""
 
@@ -2474,6 +2538,7 @@ def attach_semantic_judge(
         agent_model=agent_model,
         configured_model=config["default_model"],
         data_parallel_rank=data_parallel_rank,
+        upstream_api_key=upstream_api_key,
     )
     oracle_result["semantic_judge"] = semantic_result
     if (
@@ -3122,6 +3187,7 @@ def run_one(
                 base_url=base_url,
                 agent_model=model,
                 data_parallel_rank=data_parallel_rank,
+                upstream_api_key=upstream_api_key,
             )
             oracle_failure = grader_contract_error(score)
             if oracle_failure:
@@ -3407,20 +3473,28 @@ def main() -> None:
     )
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--timeout", type=int)
-    parser.add_argument("--max-tokens", type=int, default=32768)
+    parser.add_argument("--max-tokens", type=int, default=65536)
     parser.add_argument("--context-window", type=int, default=200000)
     parser.add_argument("--max-agent-turns", type=int, default=150)
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--data-parallel-rank", type=int)
     parser.add_argument(
         "--thinking",
-        choices=("off", "minimal", "low", "medium", "high", "xhigh"),
+        choices=("off", "minimal", "low", "medium", "high", "xhigh", "max"),
         default="high",
     )
     parser.add_argument("--openclaw-image", default=DEFAULT_OPENCLAW_IMAGE)
     parser.add_argument(
         "--harness-image",
         help="override the selected non-OpenClaw OCI image",
+    )
+    parser.add_argument(
+        "--reuse-recorded-images",
+        action="store_true",
+        help=(
+            "resume an existing run with the runtime images it already "
+            "recorded instead of rebuilding them"
+        ),
     )
     parser.add_argument("--run-root")
     parser.add_argument(
@@ -3479,15 +3553,9 @@ def main() -> None:
     upstream_api_key: str | None = None
     if args.upstream_api_key_file:
         try:
-            upstream_api_key = (
-                Path(args.upstream_api_key_file).read_text(encoding="utf-8").strip()
-            )
-        except OSError as exc:
-            raise SystemExit(f"cannot read --upstream-api-key-file: {exc}") from exc
-        if not upstream_api_key:
-            raise SystemExit("--upstream-api-key-file is empty")
-        if "\r" in upstream_api_key or "\n" in upstream_api_key:
-            raise SystemExit("--upstream-api-key-file must contain one line")
+            upstream_api_key = read_upstream_api_key_file(args.upstream_api_key_file)
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
     if args.shard_count < 1:
         raise SystemExit("--shard-count must be positive")
     if not 0 <= args.shard_index < args.shard_count:
@@ -3551,18 +3619,21 @@ def main() -> None:
         trace_complete = harness_spec.trace_complete
         if args.harness_image:
             image = ensure_image(image)
-    ensure_image(STAGER_IMAGE)
-    ensure_image(GRADER_BASE_IMAGE)
-    runtime_images = build_images()
-    if harness_spec is not None and not args.harness_image:
-        runtime_images[image] = build_harness_image(harness_spec)
+    if args.reuse_recorded_images:
+        runtime_images = reuse_recorded_runtime_images(run_root)
     else:
-        resolved_image_id = docker(
-            "image", "inspect", image, "--format", "{{.Id}}"
-        ).stdout.strip()
-        runtime_images[requested_image] = resolved_image_id
-        if image != requested_image:
-            runtime_images[image] = resolved_image_id
+        ensure_image(STAGER_IMAGE)
+        ensure_image(GRADER_BASE_IMAGE)
+        runtime_images = build_images()
+        if harness_spec is not None and not args.harness_image:
+            runtime_images[image] = build_harness_image(harness_spec)
+        else:
+            resolved_image_id = docker(
+                "image", "inspect", image, "--format", "{{.Id}}"
+            ).stdout.strip()
+            runtime_images[requested_image] = resolved_image_id
+            if image != requested_image:
+                runtime_images[image] = resolved_image_id
     if run_root is None:
         model_slug = "".join(
             char if char.isalnum() or char in "._-" else "-"
@@ -3580,6 +3651,7 @@ def main() -> None:
     run_root.mkdir(parents=True, exist_ok=True)
     safe_chmod(EVALUATIONS_DIR, 0o755)
     safe_chmod(run_root, 0o755)
+    ensure_resumable_run(run_root)
     tasks_root = run_root / "tasks"
     tasks_root.mkdir(parents=True, exist_ok=True)
     safe_chmod(tasks_root, 0o755)

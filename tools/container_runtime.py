@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -96,6 +97,25 @@ def docker_build_proxy_args() -> list[str]:
     for name, value in values.items():
         args.extend(["--build-arg", f"{name}={value}"])
     return args
+
+
+@functools.lru_cache(maxsize=1)
+def buildkit_available() -> bool:
+    """True when the Docker CLI can run BuildKit builds.
+
+    ``--provenance`` is a BuildKit-only flag that the legacy builder rejects
+    outright, so a host without the buildx component must omit it rather than
+    fail every image build.
+    """
+    if os.environ.get("DOCKER_BUILDKIT", "").strip() == "0":
+        return False
+    probe = docker("buildx", "version", check=False, timeout=30)
+    return probe.returncode == 0
+
+
+def docker_build_provenance_args() -> list[str]:
+    """Attestation flags for image builds, empty under the legacy builder."""
+    return ["--provenance=false"] if buildkit_available() else []
 
 
 def require_docker() -> None:
@@ -211,7 +231,7 @@ def build_images() -> dict[str, str]:
         docker(
             "build",
             "--pull=false",
-            "--provenance=false",
+            *docker_build_provenance_args(),
             *_grader_build_args(),
             "--build-arg",
             f"HARNESSBENCH_GRADER_SOURCE_SHA256={source_sha256}",

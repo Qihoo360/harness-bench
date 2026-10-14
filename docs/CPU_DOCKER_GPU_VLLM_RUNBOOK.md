@@ -173,7 +173,7 @@ python tools/run_benchmark.py \
   --temperature 1 \
   --context-window 200000 \
   --max-agent-turns 150 \
-  --max-tokens 32768 \
+  --max-tokens 65536 \
   --task-set standard274 \
   --run-root "$HB_RUN_ROOT"
 ```
@@ -237,7 +237,7 @@ python tools/run_benchmark.py \
   --temperature 1 \
   --context-window 200000 \
   --max-agent-turns 150 \
-  --max-tokens 32768 \
+  --max-tokens 65536 \
   --run-root "$HB_RUN_ROOT"
 ```
 
